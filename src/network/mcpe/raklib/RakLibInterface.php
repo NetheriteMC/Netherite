@@ -25,7 +25,9 @@ namespace pocketmine\network\mcpe\raklib;
 
 use pocketmine\network\AdvancedNetworkInterface;
 use pocketmine\network\BadPacketException;
+use pocketmine\network\mcpe\compression\ZlibCompressor;
 use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\network\mcpe\protocol\PacketPool;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\Network;
 use pocketmine\Server;
@@ -34,7 +36,6 @@ use pocketmine\utils\Filesystem;
 use pocketmine\utils\Utils;
 use raklib\protocol\EncapsulatedPacket;
 use raklib\protocol\PacketReliability;
-use raklib\RakLib;
 use raklib\server\ipc\RakLibToUserThreadMessageReceiver;
 use raklib\server\ipc\UserToRakLibThreadMessageSender;
 use raklib\server\ServerEventListener;
@@ -101,7 +102,6 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 			$this->sleeper
 		);
 		$this->eventReceiver = new RakLibToUserThreadMessageReceiver(
-			$this,
 			new PthreadsChannelReader($threadToMainBuffer)
 		);
 		$this->interface = new UserToRakLibThreadMessageSender(
@@ -111,7 +111,7 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 
 	public function start() : void{
 		$this->server->getTickSleeper()->addNotifier($this->sleeper, function() : void{
-			while($this->eventReceiver->handle());
+			while($this->eventReceiver->handle($this));
 		});
 		$this->server->getLogger()->debug("Waiting for RakLib to start...");
 		$this->rakLib->startAndWait(PTHREADS_INHERIT_CONSTANTS); //HACK: MainLogger needs constants for exception logging
@@ -154,7 +154,15 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 	}
 
 	public function openSession(int $sessionId, string $address, int $port, int $clientID) : void{
-		$session = new NetworkSession($this->server, $this->network->getSessionManager(), new RakLibPacketSender($sessionId, $this), $address, $port);
+		$session = new NetworkSession(
+			$this->server,
+			$this->network->getSessionManager(),
+			PacketPool::getInstance(),
+			new RakLibPacketSender($sessionId, $this),
+			ZlibCompressor::getInstance(), //TODO: this shouldn't be hardcoded, but we might need the RakNet protocol version to select it
+			$address,
+			$port
+		);
 		$this->sessions[$sessionId] = $session;
 	}
 
@@ -232,6 +240,10 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 		$this->interface->setOption("portChecking", $name);
 	}
 
+	public function setPacketLimit(int $limit) : void{
+		$this->interface->setOption("packetLimit", $limit);
+	}
+
 	public function handleOption(string $option, string $value) : void{
 		if($option === "bandwidth"){
 			$v = unserialize($value);
@@ -246,7 +258,7 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 			$pk->reliability = PacketReliability::RELIABLE_ORDERED;
 			$pk->orderChannel = 0;
 
-			$this->interface->sendEncapsulated($sessionId, $pk, ($immediate ? RakLib::PRIORITY_IMMEDIATE : RakLib::PRIORITY_NORMAL));
+			$this->interface->sendEncapsulated($sessionId, $pk, $immediate);
 		}
 	}
 

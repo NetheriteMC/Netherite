@@ -24,7 +24,8 @@ declare(strict_types=1);
 namespace pocketmine\network\mcpe\serializer;
 
 use pocketmine\block\tile\Spawnable;
-use pocketmine\network\mcpe\protocol\types\RuntimeBlockMapping;
+use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
+use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
 use pocketmine\utils\BinaryStream;
 use pocketmine\world\format\Chunk;
 use function count;
@@ -50,7 +51,7 @@ final class ChunkSerializer{
 		return 0;
 	}
 
-	public static function serialize(Chunk $chunk, ?string $tiles = null) : string{
+	public static function serialize(Chunk $chunk, RuntimeBlockMapping $blockMapper, ?string $tiles = null) : string{
 		$stream = new NetworkBinaryStream();
 		$subChunkCount = self::getSubChunkCount($chunk);
 		for($y = 0; $y < $subChunkCount; ++$y){
@@ -69,7 +70,7 @@ final class ChunkSerializer{
 				//zigzag and just shift directly.
 				$stream->putUnsignedVarInt(count($palette) << 1); //yes, this is intentionally zigzag
 				foreach($palette as $p){
-					$stream->putUnsignedVarInt(RuntimeBlockMapping::toStaticRuntimeId($p >> 4, $p & 0xf) << 1);
+					$stream->putUnsignedVarInt($blockMapper->toRuntimeId($p >> 4, $p & 0xf) << 1);
 				}
 			}
 		}
@@ -89,7 +90,7 @@ final class ChunkSerializer{
 		$stream = new BinaryStream();
 		foreach($chunk->getTiles() as $tile){
 			if($tile instanceof Spawnable){
-				$stream->put($tile->getSerializedSpawnCompound());
+				$stream->put($tile->getSerializedSpawnCompound()->getEncodedNbt());
 			}
 		}
 
