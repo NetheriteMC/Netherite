@@ -23,30 +23,22 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\protocol\types;
 
-use pocketmine\utils\UUID;
+final class DeviceOS{
 
-class CommandOriginData{
-	public const ORIGIN_PLAYER = 0;
-	public const ORIGIN_BLOCK = 1;
-	public const ORIGIN_MINECART_BLOCK = 2;
-	public const ORIGIN_DEV_CONSOLE = 3;
-	public const ORIGIN_TEST = 4;
-	public const ORIGIN_AUTOMATION_PLAYER = 5;
-	public const ORIGIN_CLIENT_AUTOMATION = 6;
-	public const ORIGIN_DEDICATED_SERVER = 7;
-	public const ORIGIN_ENTITY = 8;
-	public const ORIGIN_VIRTUAL = 9;
-	public const ORIGIN_GAME_ARGUMENT = 10;
-	public const ORIGIN_ENTITY_SERVER = 11; //???
+	public const UNKNOWN = -1;
+	public const ANDROID = 1;
+	public const IOS = 2;
+	public const OSX = 3;
+	public const AMAZON = 4;
+	public const GEAR_VR = 5;
+	public const HOLOLENS = 6;
+	public const WINDOWS_10 = 7;
+	public const WIN32 = 8;
+	public const DEDICATED = 9;
+	public const TVOS = 10;
+	public const PLAYSTATION = 11;
+	public const NINTENDO = 12;
+	public const XBOX = 13;
+	public const WINDOWS_PHONE = 14;
 
-	/** @var int */
-	public $type;
-	/** @var UUID */
-	public $uuid;
-
-	/** @var string */
-	public $requestId;
-
-	/** @var int */
-	public $playerEntityUniqueId;
 }
