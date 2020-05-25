@@ -28,7 +28,8 @@ namespace pocketmine\network\mcpe\protocol;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\NetworkSession;
 
-class MoveActorAbsolutePacket extends DataPacket{
+class MoveActorAbsolutePacket extends DataPacket {
+
 	public const NETWORK_ID = ProtocolInfo::MOVE_ACTOR_ABSOLUTE_PACKET;
 
 	public const FLAG_GROUND = 0x01;
