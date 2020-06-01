@@ -217,6 +217,8 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	public const SPECTATOR = 3;
 	public const VIEW = Player::SPECTATOR;
 
+	private const RESOURCE_PACK_CHUNK_SIZE = 128 * 1024; //128KB
+
 	/**
 	 * Validates the given username.
 	 */
@@ -2070,7 +2072,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 
 					$pk = new ResourcePackDataInfoPacket();
 					$pk->packId = $pack->getPackId();
-					$pk->maxChunkSize = 1048576; //1MB
+					$pk->maxChunkSize = self::RESOURCE_PACK_CHUNK_SIZE;
 					$pk->chunkCount = (int) ceil($pack->getPackSize() / $pk->maxChunkSize);
 					$pk->compressedPackSize = $pack->getPackSize();
 					$pk->sha256 = $pack->getSha256();
@@ -2236,7 +2238,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	}
 
 	public function handleMovePlayer(MovePlayerPacket $packet) : bool{
-		$newPos = $packet->position->subtract(0, $this->baseOffset, 0);
+		$newPos = $packet->position->round(4)->subtract(0, $this->baseOffset, 0);
 
 		if($this->isTeleporting and $newPos->distanceSquared($this) > 1){  //Tolerate up to 1 block to avoid problems with client-sided physics when spawning in blocks
 			$this->sendPosition($this, null, null, MovePlayerPacket::MODE_RESET);
@@ -2303,11 +2305,6 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	public function handleInventoryTransaction(InventoryTransactionPacket $packet) : bool{
 		if(!$this->spawned or !$this->isAlive()){
 			return false;
-		}
-
-		if($this->isSpectator()){
-			$this->sendAllInventories();
-			return true;
 		}
 
 		/** @var InventoryAction[] $actions */
@@ -2403,7 +2400,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 
 						$this->setUsingItem(false);
 
-						if(!$this->canInteract($blockVector->add(0.5, 0.5, 0.5), 13) or $this->isSpectator()){
+						if(!$this->canInteract($blockVector->add(0.5, 0.5, 0.5), 13)){
 						}elseif($this->isCreative()){
 							$item = $this->inventory->getItemInHand();
 							if($this->level->useItemOn($blockVector, $item, $face, $packet->trData->clickPos, $this, true)){
@@ -2509,7 +2506,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 						}
 
 						$ev = new PlayerInteractEvent($this, $item, null, $directionVector, $face, PlayerInteractEvent::RIGHT_CLICK_AIR);
-						if($this->hasItemCooldown($item)){
+						if($this->hasItemCooldown($item) or $this->isSpectator()){
 							$ev->setCancelled();
 						}
 
@@ -2560,7 +2557,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 						$heldItem = $this->inventory->getItemInHand();
 						$oldItem = clone $heldItem;
 
-						if(!$this->canInteract($target, 8)){
+						if(!$this->canInteract($target, 8) or $this->isSpectator()){
 							$cancelled = true;
 						}elseif($target instanceof Player){
 							if(!$this->server->getConfigBool("pvp")){
@@ -3058,8 +3055,8 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 		$pk = new ResourcePackChunkDataPacket();
 		$pk->packId = $pack->getPackId();
 		$pk->chunkIndex = $packet->chunkIndex;
-		$pk->data = $pack->getPackChunk(1048576 * $packet->chunkIndex, 1048576);
-		$pk->progress = (1048576 * $packet->chunkIndex);
+		$pk->data = $pack->getPackChunk(self::RESOURCE_PACK_CHUNK_SIZE * $packet->chunkIndex, self::RESOURCE_PACK_CHUNK_SIZE);
+		$pk->progress = (self::RESOURCE_PACK_CHUNK_SIZE * $packet->chunkIndex);
 		$this->dataPacket($pk);
 		return true;
 	}
@@ -3743,6 +3740,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 		$pk->headYaw = $yaw;
 		$pk->yaw = $yaw;
 		$pk->mode = $mode;
+		$pk->onGround = $this->onGround;
 
 		if($targets !== null){
 			$this->server->broadcastPacket($targets, $pk);
