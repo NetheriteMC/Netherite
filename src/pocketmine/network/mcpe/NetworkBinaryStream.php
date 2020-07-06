@@ -88,11 +88,10 @@ class NetworkBinaryStream extends BinaryStream{
 		$animationCount = $this->getLInt();
 		$animations = [];
 		for($i = 0; $i < $animationCount; ++$i){
-			$animations[] = new SkinAnimation(
-				$skinImage = $this->getSkinImage(),
-				$animationType = $this->getLInt(),
-				$animationFrames = $this->getLFloat()
-			);
+			$skinImage = $this->getSkinImage();
+			$animationType = $this->getLInt();
+			$animationFrames = $this->getLFloat();
+			$animations[] = new SkinAnimation($skinImage, $animationType, $animationFrames);
 		}
 		$capeData = $this->getSkinImage();
 		$geometryData = $this->getString();
@@ -107,13 +106,12 @@ class NetworkBinaryStream extends BinaryStream{
 		$personaPieceCount = $this->getLInt();
 		$personaPieces = [];
 		for($i = 0; $i < $personaPieceCount; ++$i){
-			$personaPieces[] = new PersonaSkinPiece(
-				$pieceId = $this->getString(),
-				$pieceType = $this->getString(),
-				$packId = $this->getString(),
-				$isDefaultPiece = $this->getBool(),
-				$productId = $this->getString()
-			);
+			$pieceId = $this->getString();
+			$pieceType = $this->getString();
+			$packId = $this->getString();
+			$isDefaultPiece = $this->getBool();
+			$productId = $this->getString();
+			$personaPieces[] = new PersonaSkinPiece($pieceId, $pieceType, $packId, $isDefaultPiece, $productId);
 		}
 		$pieceTintColorCount = $this->getLInt();
 		$pieceTintColors = [];
@@ -202,9 +200,9 @@ class NetworkBinaryStream extends BinaryStream{
 		/** @var CompoundTag|null $nbt */
 		$nbt = null;
 		if($nbtLen === 0xffff){
-			$c = $this->getByte();
-			if($c !== 1){
-				throw new \UnexpectedValueException("Unexpected NBT count $c");
+			$nbtDataVersion = $this->getByte();
+			if($nbtDataVersion !== 1){
+				throw new \UnexpectedValueException("Unexpected NBT data version $nbtDataVersion");
 			}
 			$decodedNBT = (new NetworkLittleEndianNBTStream())->read($this->buffer, false, $this->offset, 512);
 			if(!($decodedNBT instanceof CompoundTag)){
@@ -277,7 +275,7 @@ class NetworkBinaryStream extends BinaryStream{
 
 		if($nbt !== null){
 			$this->putLShort(0xffff);
-			$this->putByte(1); //TODO: some kind of count field? always 1 as of 1.9.0
+			$this->putByte(1); //TODO: NBT data version (?)
 			$this->put((new NetworkLittleEndianNBTStream())->write($nbt));
 		}else{
 			$this->putLShort(0);
@@ -473,7 +471,7 @@ class NetworkBinaryStream extends BinaryStream{
 	/**
 	 * Reads and returns an EntityUniqueID
 	 */
-	public function getEntityUniqueId() : int{
+	final public function getEntityUniqueId() : int{
 		return $this->getVarLong();
 	}
 
@@ -487,7 +485,7 @@ class NetworkBinaryStream extends BinaryStream{
 	/**
 	 * Reads and returns an EntityRuntimeID
 	 */
-	public function getEntityRuntimeId() : int{
+	final public function getEntityRuntimeId() : int{
 		return $this->getUnsignedVarLong();
 	}
 
@@ -546,11 +544,10 @@ class NetworkBinaryStream extends BinaryStream{
 	 * Reads a floating-point Vector3 object with coordinates rounded to 4 decimal places.
 	 */
 	public function getVector3() : Vector3{
-		return new Vector3(
-			$this->getLFloat(),
-			$this->getLFloat(),
-			$this->getLFloat()
-		);
+		$x = $this->getLFloat();
+		$y = $this->getLFloat();
+		$z = $this->getLFloat();
+		return new Vector3($x, $y, $z);
 	}
 
 	/**
@@ -647,14 +644,12 @@ class NetworkBinaryStream extends BinaryStream{
 	}
 
 	protected function getEntityLink() : EntityLink{
-		$link = new EntityLink();
-
-		$link->fromEntityUniqueId = $this->getEntityUniqueId();
-		$link->toEntityUniqueId = $this->getEntityUniqueId();
-		$link->type = $this->getByte();
-		$link->immediate = $this->getBool();
-
-		return $link;
+		$fromEntityUniqueId = $this->getEntityUniqueId();
+		$toEntityUniqueId = $this->getEntityUniqueId();
+		$type = $this->getByte();
+		$immediate = $this->getBool();
+		$causedByRider = $this->getBool();
+		return new EntityLink($fromEntityUniqueId, $toEntityUniqueId, $type, $immediate, $causedByRider);
 	}
 
 	protected function putEntityLink(EntityLink $link) : void{
@@ -662,6 +657,7 @@ class NetworkBinaryStream extends BinaryStream{
 		$this->putEntityUniqueId($link->toEntityUniqueId);
 		$this->putByte($link->type);
 		$this->putBool($link->immediate);
+		$this->putBool($link->causedByRider);
 	}
 
 	protected function getCommandOriginData() : CommandOriginData{
@@ -752,5 +748,13 @@ class NetworkBinaryStream extends BinaryStream{
 		$this->putVarInt($structureEditorData->structureBlockType);
 		$this->putStructureSettings($structureEditorData->structureSettings);
 		$this->putVarInt($structureEditorData->structureRedstoneSaveMove);
+	}
+
+	public function readGenericTypeNetworkId() : int{
+		return $this->getVarInt();
+	}
+
+	public function writeGenericTypeNetworkId(int $id) : void{
+		$this->putVarInt($id);
 	}
 }
