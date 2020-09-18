@@ -1,8 +1,8 @@
 {
-   "name": "pocketmine/pocketmine-mp",
-   "description": "A server software for Minecraft: Pocket Edition written in PHP",
+   "name": "netherite",
+   "description": "A server software for Minecraft: Bedrock Edition written in PHP",
    "type": "project",
-   "homepage": "https://pmmp.io",
+   "homepage": "https://netheritemc.github.io",
    "license": "LGPL-3.0",
    "require": {
       "php": ">=7.3.0",
