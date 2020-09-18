@@ -276,4 +276,6 @@ interface BlockIds{
 
 	public const RESERVED6 = 255;
 
+	public const NETHERITE_BLOCK = 525;
+
 }
