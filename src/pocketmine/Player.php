@@ -53,6 +53,7 @@ use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerCommandPreprocessEvent;
 use pocketmine\event\player\PlayerDeathEvent;
 use pocketmine\event\player\PlayerEditBookEvent;
+use pocketmine\event\player\PlayerEmoteEvent;
 use pocketmine\event\player\PlayerExhaustEvent;
 use pocketmine\event\player\PlayerGameModeChangeEvent;
 use pocketmine\event\player\PlayerInteractEvent;
@@ -119,6 +120,7 @@ use pocketmine\network\mcpe\protocol\ContainerClosePacket;
 use pocketmine\network\mcpe\protocol\ContainerOpenPacket;
 use pocketmine\network\mcpe\protocol\DataPacket;
 use pocketmine\network\mcpe\protocol\DisconnectPacket;
+use pocketmine\network\mcpe\protocol\EmotePacket;
 use pocketmine\network\mcpe\protocol\InteractPacket;
 use pocketmine\network\mcpe\protocol\InventoryTransactionPacket;
 use pocketmine\network\mcpe\protocol\ItemFrameDropItemPacket;
@@ -3277,6 +3279,20 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 		}
 
 		$this->getInventory()->setItem($packet->inventorySlot, $event->getNewBook());
+
+		return true;
+	}
+
+	public function handleEmote(EmotePacket $packet) : bool {
+		$rawEmoteId = $packet->getEmoteId();
+		$emoteId = UUID::fromString($rawEmoteId);
+		$event = new PlayerEmoteEvent($this, $emoteId);
+		$event->call();
+		if ($event->isCancelled()) {
+			return true;
+		}
+
+		$this->getLevelNonNull()->broadcastPacketToViewers($this, EmotePacket::create($this->getId(), $rawEmoteId, EmotePacket::FLAG_SERVER));
 
 		return true;
 	}
