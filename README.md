@@ -11,6 +11,9 @@
 - [Docker image](https://hub.docker.com/r/pmmp/pocketmine-mp)
 - [Plugin repository](https://poggit.pmmp.io/plugins)
 
+## Installation
+Go to [NetheriteMC Website](https://netheritemc.github.io) for instructions.
+
 ## Discussion/Help
 - [Forums](https://forums.pmmp.io/)
 - [Discord](https://discord.gg/bmSAZBG)
