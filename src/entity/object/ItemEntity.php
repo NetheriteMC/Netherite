@@ -24,21 +24,22 @@ declare(strict_types=1);
 namespace pocketmine\entity\object;
 
 use pocketmine\entity\Entity;
+use pocketmine\entity\Location;
 use pocketmine\event\entity\ItemDespawnEvent;
 use pocketmine\event\entity\ItemSpawnEvent;
 use pocketmine\event\inventory\InventoryPickupItemEvent;
 use pocketmine\item\Item;
+use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\AddItemActorPacket;
-use pocketmine\network\mcpe\protocol\types\entity\EntityLegacyIds;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
-use function get_class;
 use function max;
 
 class ItemEntity extends Entity{
 
-	public static function getNetworkTypeId() : int{ return EntityLegacyIds::ITEM; }
+	public static function getNetworkTypeId() : string{ return EntityIds::ITEM; }
 
 	public const DEFAULT_DESPAWN_DELAY = 6000; //5 minutes
 	public const NEVER_DESPAWN = -1;
@@ -55,7 +56,6 @@ class ItemEntity extends Entity{
 
 	public $width = 0.25;
 	public $height = 0.25;
-	protected $baseOffset = 0.125;
 
 	protected $gravity = 0.04;
 	protected $drag = 0.02;
@@ -64,6 +64,14 @@ class ItemEntity extends Entity{
 
 	/** @var int */
 	protected $despawnDelay = self::DEFAULT_DESPAWN_DELAY;
+
+	public function __construct(Location $location, Item $item, ?CompoundTag $nbt = null){
+		if($item->isNull()){
+			throw new \InvalidArgumentException("Item entity must have a non-air item with a count of at least 1");
+		}
+		$this->item = $item;
+		parent::__construct($location, $nbt);
+	}
 
 	protected function initEntity(CompoundTag $nbt) : void{
 		parent::initEntity($nbt);
@@ -80,16 +88,6 @@ class ItemEntity extends Entity{
 		$this->pickupDelay = $nbt->getShort("PickupDelay", $this->pickupDelay);
 		$this->owner = $nbt->getString("Owner", $this->owner);
 		$this->thrower = $nbt->getString("Thrower", $this->thrower);
-
-		$itemTag = $nbt->getCompoundTag("Item");
-		if($itemTag === null){
-			throw new \UnexpectedValueException("Invalid " . get_class($this) . " entity: expected \"Item\" NBT tag not found");
-		}
-
-		$this->item = Item::nbtDeserialize($itemTag);
-		if($this->item->isNull()){
-			throw new \UnexpectedValueException("Item for " . get_class($this) . " is invalid");
-		}
 
 		(new ItemSpawnEvent($this))->call();
 	}
@@ -215,6 +213,10 @@ class ItemEntity extends Entity{
 		$pk->metadata = $this->getSyncedNetworkData(false);
 
 		$player->getNetworkSession()->sendDataPacket($pk);
+	}
+
+	public function getOffsetPosition(Vector3 $vector3) : Vector3{
+		return $vector3->add(0, 0.125, 0);
 	}
 
 	public function onCollideWithPlayer(Player $player) : void{

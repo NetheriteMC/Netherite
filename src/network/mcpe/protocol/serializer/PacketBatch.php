@@ -24,28 +24,31 @@ declare(strict_types=1);
 namespace pocketmine\network\mcpe\protocol\serializer;
 
 use pocketmine\network\mcpe\protocol\Packet;
+use pocketmine\network\mcpe\protocol\PacketDecodeException;
 use pocketmine\network\mcpe\protocol\PacketPool;
-use pocketmine\utils\BinaryDataException;
 
 class PacketBatch{
 
-	/** @var NetworkBinaryStream */
-	private $binaryStream;
+	/** @var string */
+	private $buffer;
 
-	public function __construct(?string $buffer = null){
-		$this->binaryStream = new NetworkBinaryStream($buffer ?? "");
-	}
-
-	public function putPacket(Packet $packet) : void{
-		$packet->encode();
-		$this->binaryStream->putString($packet->getBinaryStream()->getBuffer());
+	public function __construct(string $buffer){
+		$this->buffer = $buffer;
 	}
 
 	/**
-	 * @throws BinaryDataException
+	 * @return \Generator|Packet[]
+	 * @phpstan-return \Generator<int, Packet, void, void>
+	 * @throws PacketDecodeException
 	 */
-	public function getPacket(PacketPool $packetPool) : Packet{
-		return $packetPool->getPacket($this->binaryStream->getString());
+	public function getPackets(PacketPool $packetPool, int $max) : \Generator{
+		$serializer = new PacketSerializer($this->buffer);
+		for($c = 0; $c < $max and !$serializer->feof(); ++$c){
+			yield $c => $packetPool->getPacket($serializer->getString());
+		}
+		if(!$serializer->feof()){
+			throw new PacketDecodeException("Reached limit of $max packets in a single batch");
+		}
 	}
 
 	/**
@@ -56,18 +59,15 @@ class PacketBatch{
 	 * @return PacketBatch
 	 */
 	public static function fromPackets(Packet ...$packets) : self{
-		$result = new self();
+		$serializer = new PacketSerializer();
 		foreach($packets as $packet){
-			$result->putPacket($packet);
+			$packet->encode();
+			$serializer->putString($packet->getSerializer()->getBuffer());
 		}
-		return $result;
+		return new self($serializer->getBuffer());
 	}
 
 	public function getBuffer() : string{
-		return $this->binaryStream->getBuffer();
-	}
-
-	public function feof() : bool{
-		return $this->binaryStream->feof();
+		return $this->buffer;
 	}
 }

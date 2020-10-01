@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace pocketmine\scheduler;
 
+use Ds\Set;
 use pocketmine\utils\ReversePriorityQueue;
 
 class TaskScheduler{
@@ -36,14 +37,17 @@ class TaskScheduler{
 	/** @var bool */
 	private $enabled = true;
 
-	/** @var ReversePriorityQueue<TaskHandler> */
+	/**
+	 * @var ReversePriorityQueue
+	 * @phpstan-var ReversePriorityQueue<int, TaskHandler>
+	 */
 	protected $queue;
 
-	/** @var TaskHandler[] */
-	protected $tasks = [];
-
-	/** @var int */
-	private $ids = 1;
+	/**
+	 * @var Set|TaskHandler[]
+	 * @phpstan-var Set<TaskHandler>
+	 */
+	protected $tasks;
 
 	/** @var int */
 	protected $currentTick = 0;
@@ -51,6 +55,7 @@ class TaskScheduler{
 	public function __construct(?string $owner = null){
 		$this->owner = $owner;
 		$this->queue = new ReversePriorityQueue();
+		$this->tasks = new Set();
 	}
 
 	public function scheduleTask(Task $task) : TaskHandler{
@@ -69,29 +74,18 @@ class TaskScheduler{
 		return $this->addTask($task, $delay, $period);
 	}
 
-	public function cancelTask(int $taskId) : void{
-		if(isset($this->tasks[$taskId])){
-			try{
-				$this->tasks[$taskId]->cancel();
-			}finally{
-				unset($this->tasks[$taskId]);
-			}
-		}
-	}
-
 	public function cancelAllTasks() : void{
 		foreach($this->tasks as $id => $task){
-			$this->cancelTask($id);
+			$task->cancel();
 		}
-		$this->tasks = [];
+		$this->tasks->clear();
 		while(!$this->queue->isEmpty()){
 			$this->queue->extract();
 		}
-		$this->ids = 1;
 	}
 
-	public function isQueued(int $taskId) : bool{
-		return isset($this->tasks[$taskId]);
+	public function isQueued(TaskHandler $task) : bool{
+		return $this->tasks->contains($task);
 	}
 
 	/**
@@ -112,7 +106,7 @@ class TaskScheduler{
 			$period = 1;
 		}
 
-		return $this->handle(new TaskHandler($task, $this->nextId(), $delay, $period, $this->owner));
+		return $this->handle(new TaskHandler($task, $delay, $period, $this->owner));
 	}
 
 	private function handle(TaskHandler $handler) : TaskHandler{
@@ -123,7 +117,7 @@ class TaskScheduler{
 		}
 
 		$handler->setNextRun($nextRun);
-		$this->tasks[$handler->getTaskId()] = $handler;
+		$this->tasks->add($handler);
 		$this->queue->insert($handler, $nextRun);
 
 		return $handler;
@@ -144,7 +138,7 @@ class TaskScheduler{
 			/** @var TaskHandler $task */
 			$task = $this->queue->extract();
 			if($task->isCancelled()){
-				unset($this->tasks[$task->getTaskId()]);
+				$this->tasks->remove($task);
 				continue;
 			}
 			$task->run();
@@ -153,16 +147,12 @@ class TaskScheduler{
 				$this->queue->insert($task, $this->currentTick + $task->getPeriod());
 			}else{
 				$task->remove();
-				unset($this->tasks[$task->getTaskId()]);
+				$this->tasks->remove($task);
 			}
 		}
 	}
 
 	private function isReady(int $currentTick) : bool{
 		return !$this->queue->isEmpty() and $this->queue->current()->getNextRun() <= $currentTick;
-	}
-
-	private function nextId() : int{
-		return $this->ids++;
 	}
 }

@@ -24,10 +24,12 @@ declare(strict_types=1);
 namespace pocketmine\block;
 
 use pocketmine\block\utils\BlockDataSerializer;
+use pocketmine\block\utils\HorizontalFacingTrait;
 use pocketmine\block\utils\TreeType;
 use pocketmine\item\Fertilizer;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
+use pocketmine\math\Axis;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
@@ -36,9 +38,8 @@ use pocketmine\world\BlockTransaction;
 use function mt_rand;
 
 class CocoaBlock extends Transparent{
+	use HorizontalFacingTrait;
 
-	/** @var int */
-	protected $facing = Facing::NORTH;
 	/** @var int */
 	protected $age = 0;
 
@@ -74,7 +75,7 @@ class CocoaBlock extends Transparent{
 	}
 
 	public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
-		if(Facing::axis($face) !== Facing::AXIS_Y and $blockClicked instanceof Wood and $blockClicked->getTreeType()->equals(TreeType::JUNGLE())){
+		if(Facing::axis($face) !== Axis::Y and $blockClicked instanceof Wood and $blockClicked->getTreeType()->equals(TreeType::JUNGLE())){
 			$this->facing = $face;
 			return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
 		}
@@ -85,7 +86,7 @@ class CocoaBlock extends Transparent{
 	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
 		if($this->age < 2 and $item instanceof Fertilizer){
 			$this->age++;
-			$this->pos->getWorldNonNull()->setBlock($this->pos, $this);
+			$this->pos->getWorld()->setBlock($this->pos, $this);
 
 			$item->pop();
 
@@ -98,7 +99,7 @@ class CocoaBlock extends Transparent{
 	public function onNearbyBlockChange() : void{
 		$side = $this->getSide(Facing::opposite($this->facing));
 		if(!($side instanceof Wood) or !$side->getTreeType()->equals(TreeType::JUNGLE())){
-			$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+			$this->pos->getWorld()->useBreakOn($this->pos);
 		}
 	}
 
@@ -109,7 +110,7 @@ class CocoaBlock extends Transparent{
 	public function onRandomTick() : void{
 		if($this->age < 2 and mt_rand(1, 5) === 1){
 			$this->age++;
-			$this->pos->getWorldNonNull()->setBlock($this->pos, $this);
+			$this->pos->getWorld()->setBlock($this->pos, $this);
 		}
 	}
 

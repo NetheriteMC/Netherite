@@ -25,7 +25,7 @@ namespace pocketmine\network\mcpe\protocol;
 
 #include <rules/DataPacket.h>
 
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use function count;
 
 class TextPacket extends DataPacket implements ClientboundPacket, ServerboundPacket{
@@ -40,7 +40,8 @@ class TextPacket extends DataPacket implements ClientboundPacket, ServerboundPac
 	public const TYPE_SYSTEM = 6;
 	public const TYPE_WHISPER = 7;
 	public const TYPE_ANNOUNCEMENT = 8;
-	public const TYPE_JSON = 9;
+	public const TYPE_JSON_WHISPER = 9;
+	public const TYPE_JSON = 10;
 
 	/** @var int */
 	public $type;
@@ -115,7 +116,7 @@ class TextPacket extends DataPacket implements ClientboundPacket, ServerboundPac
 		return self::messageOnly(self::TYPE_TIP, $message);
 	}
 
-	protected function decodePayload(NetworkBinaryStream $in) : void{
+	protected function decodePayload(PacketSerializer $in) : void{
 		$this->type = $in->getByte();
 		$this->needsTranslation = $in->getBool();
 		switch($this->type){
@@ -127,6 +128,7 @@ class TextPacket extends DataPacket implements ClientboundPacket, ServerboundPac
 			case self::TYPE_RAW:
 			case self::TYPE_TIP:
 			case self::TYPE_SYSTEM:
+			case self::TYPE_JSON_WHISPER:
 			case self::TYPE_JSON:
 				$this->message = $in->getString();
 				break;
@@ -146,7 +148,7 @@ class TextPacket extends DataPacket implements ClientboundPacket, ServerboundPac
 		$this->platformChatId = $in->getString();
 	}
 
-	protected function encodePayload(NetworkBinaryStream $out) : void{
+	protected function encodePayload(PacketSerializer $out) : void{
 		$out->putByte($this->type);
 		$out->putBool($this->needsTranslation);
 		switch($this->type){
@@ -158,6 +160,7 @@ class TextPacket extends DataPacket implements ClientboundPacket, ServerboundPac
 			case self::TYPE_RAW:
 			case self::TYPE_TIP:
 			case self::TYPE_SYSTEM:
+			case self::TYPE_JSON_WHISPER:
 			case self::TYPE_JSON:
 				$out->putString($this->message);
 				break;

@@ -39,10 +39,11 @@ use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\world\particle\HugeExplodeSeedParticle;
 use pocketmine\world\sound\ExplodeSound;
-use pocketmine\world\utils\SubChunkIteratorManager;
+use pocketmine\world\utils\SubChunkExplorer;
 use function ceil;
 use function floor;
 use function mt_rand;
+use function sqrt;
 
 class Explosion{
 	/** @var int */
@@ -61,8 +62,8 @@ class Explosion{
 	/** @var Entity|Block|null */
 	private $what;
 
-	/** @var SubChunkIteratorManager */
-	private $subChunkHandler;
+	/** @var SubChunkExplorer */
+	private $subChunkExplorer;
 
 	/**
 	 * @param Entity|Block|null $what
@@ -72,7 +73,7 @@ class Explosion{
 			throw new \InvalidArgumentException("Position does not have a valid world");
 		}
 		$this->source = $center;
-		$this->world = $center->getWorldNonNull();
+		$this->world = $center->getWorld();
 
 		if($size <= 0){
 			throw new \InvalidArgumentException("Explosion radius must be greater than 0, got $size");
@@ -80,7 +81,7 @@ class Explosion{
 		$this->size = $size;
 
 		$this->what = $what;
-		$this->subChunkHandler = new SubChunkIteratorManager($this->world);
+		$this->subChunkExplorer = new SubChunkExplorer($this->world);
 	}
 
 	/**
@@ -92,7 +93,6 @@ class Explosion{
 			return false;
 		}
 
-		$vector = new Vector3(0, 0, 0);
 		$blockFactory = BlockFactory::getInstance();
 
 		$currentChunk = null;
@@ -103,8 +103,10 @@ class Explosion{
 			for($j = 0; $j < $this->rays; ++$j){
 				for($k = 0; $k < $this->rays; ++$k){
 					if($i === 0 or $i === $mRays or $j === 0 or $j === $mRays or $k === 0 or $k === $mRays){
-						$vector->setComponents($i / $mRays * 2 - 1, $j / $mRays * 2 - 1, $k / $mRays * 2 - 1);
-						$vector->setComponents(($vector->x / ($len = $vector->length())) * $this->stepLen, ($vector->y / $len) * $this->stepLen, ($vector->z / $len) * $this->stepLen);
+						//this could be written as new Vector3(...)->normalize()->multiply(stepLen), but we're avoiding Vector3 for performance here
+						[$shiftX, $shiftY, $shiftZ] = [$i / $mRays * 2 - 1, $j / $mRays * 2 - 1, $k / $mRays * 2 - 1];
+						$len = sqrt($shiftX ** 2 + $shiftY ** 2 + $shiftZ ** 2);
+						[$shiftX, $shiftY, $shiftZ] = [($shiftX / $len) * $this->stepLen, ($shiftY / $len) * $this->stepLen, ($shiftZ / $len) * $this->stepLen];
 						$pointerX = $this->source->x;
 						$pointerY = $this->source->y;
 						$pointerZ = $this->source->z;
@@ -117,23 +119,26 @@ class Explosion{
 							$vBlockY = $pointerY >= $y ? $y : $y - 1;
 							$vBlockZ = $pointerZ >= $z ? $z : $z - 1;
 
-							$pointerX += $vector->x;
-							$pointerY += $vector->y;
-							$pointerZ += $vector->z;
+							$pointerX += $shiftX;
+							$pointerY += $shiftY;
+							$pointerZ += $shiftZ;
 
-							if(!$this->subChunkHandler->moveTo($vBlockX, $vBlockY, $vBlockZ, false)){
+							if(!$this->subChunkExplorer->moveTo($vBlockX, $vBlockY, $vBlockZ, false)){
 								continue;
 							}
 
-							$state = $this->subChunkHandler->currentSubChunk->getFullBlock($vBlockX & 0x0f, $vBlockY & 0x0f, $vBlockZ & 0x0f);
+							$state = $this->subChunkExplorer->currentSubChunk->getFullBlock($vBlockX & 0x0f, $vBlockY & 0x0f, $vBlockZ & 0x0f);
 
 							if($state !== 0){
 								$blastForce -= ($blockFactory->blastResistance[$state] / 5 + 0.3) * $this->stepLen;
 								if($blastForce > 0){
-									if(!isset($this->affectedBlocks[$index = World::blockHash($vBlockX, $vBlockY, $vBlockZ)])){
+									if(!isset($this->affectedBlocks[World::blockHash($vBlockX, $vBlockY, $vBlockZ)])){
 										$_block = $blockFactory->fromFullBlock($state);
 										$_block->position($this->world, $vBlockX, $vBlockY, $vBlockZ);
-										$this->affectedBlocks[$index] = $_block;
+										foreach($_block->getAffectedBlocks() as $_affectedBlock){
+											$_affectedBlockPos = $_affectedBlock->getPos();
+											$this->affectedBlocks[World::blockHash($_affectedBlockPos->x, $_affectedBlockPos->y, $_affectedBlockPos->z)] = $_affectedBlock;
+										}
 									}
 								}
 							}
@@ -223,7 +228,10 @@ class Explosion{
 				$this->world->setBlockAt($pos->x, $pos->y, $pos->z, $airBlock, false); //TODO: should updating really be disabled here?
 				$this->world->updateAllLight($pos->x, $pos->y, $pos->z);
 			}
+		}
 
+		foreach($this->affectedBlocks as $block){
+			$pos = $block->getPos();
 			foreach(Facing::ALL as $side){
 				$sideBlock = $pos->getSide($side);
 				if(!$this->world->isInWorld($sideBlock->x, $sideBlock->y, $sideBlock->z)){

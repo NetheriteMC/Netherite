@@ -30,6 +30,7 @@ use pocketmine\command\utils\CommandException;
 use pocketmine\lang\TranslationContainer;
 use pocketmine\permission\PermissionManager;
 use pocketmine\Server;
+use pocketmine\timings\Timings;
 use pocketmine\timings\TimingsHandler;
 use pocketmine\utils\TextFormat;
 use function explode;
@@ -98,6 +99,13 @@ abstract class Command{
 	}
 
 	public function setPermission(?string $permission) : void{
+		if($permission !== null){
+			foreach(explode(";", $permission) as $perm){
+				if(PermissionManager::getInstance()->getPermission($perm) === null){
+					throw new \InvalidArgumentException("Cannot use non-existing permission \"$perm\"");
+				}
+			}
+		}
 		$this->permission = $permission;
 	}
 
@@ -107,7 +115,7 @@ abstract class Command{
 		}
 
 		if($this->permissionMessage === null){
-			$target->sendMessage($target->getServer()->getLanguage()->translateString(TextFormat::RED . "%commands.generic.permission"));
+			$target->sendMessage($target->getLanguage()->translateString(TextFormat::RED . "%commands.generic.permission"));
 		}elseif($this->permissionMessage !== ""){
 			$target->sendMessage(str_replace("<permission>", $this->permission, $this->permissionMessage));
 		}
@@ -139,7 +147,7 @@ abstract class Command{
 			if($this->timings instanceof TimingsHandler){
 				$this->timings->remove();
 			}
-			$this->timings = new TimingsHandler("** Command: " . $name);
+			$this->timings = new TimingsHandler(Timings::INCLUDED_BY_OTHER_TIMINGS_PREFIX . "Command: " . $name);
 			$this->label = $name;
 
 			return true;
@@ -228,7 +236,7 @@ abstract class Command{
 	public static function broadcastCommandMessage(CommandSender $source, $message, bool $sendToSource = true) : void{
 		$users = PermissionManager::getInstance()->getPermissionSubscriptions(Server::BROADCAST_CHANNEL_ADMINISTRATIVE);
 		if($message instanceof TranslationContainer){
-			$formatted = "[" . $source->getName() . ": " . ($source->getServer()->getLanguage()->get($message->getText()) !== $message->getText() ? "%" : "") . $message->getText() . "]";
+			$formatted = "[" . $source->getName() . ": " . ($source->getLanguage()->get($message->getText()) !== $message->getText() ? "%" : "") . $message->getText() . "]";
 
 			$result = new TranslationContainer($formatted, $message->getParameters());
 			$colored = new TranslationContainer(TextFormat::GRAY . TextFormat::ITALIC . $formatted, $message->getParameters());

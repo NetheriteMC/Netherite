@@ -24,13 +24,12 @@ declare(strict_types=1);
 namespace pocketmine\block;
 
 use pocketmine\utils\CloningRegistryTrait;
-use pocketmine\utils\RegistryTrait;
 use function assert;
 
 /**
  * This doc-block is generated automatically, do not modify it manually.
  * This must be regenerated whenever registry members are added, removed or changed.
- * @see RegistryTrait::_generateMethodAnnotations()
+ * @see \pocketmine\utils\RegistryUtils::_generateMethodAnnotations()
  *
  * @method static WoodenButton ACACIA_BUTTON()
  * @method static WoodenDoor ACACIA_DOOR()
@@ -55,6 +54,8 @@ use function assert;
  * @method static Wall ANDESITE_WALL()
  * @method static Anvil ANVIL()
  * @method static Flower AZURE_BLUET()
+ * @method static Bamboo BAMBOO()
+ * @method static BambooSapling BAMBOO_SAPLING()
  * @method static Banner BANNER()
  * @method static Transparent BARRIER()
  * @method static Bed BED()
@@ -129,6 +130,7 @@ use function assert;
  * @method static Wall COBBLESTONE_WALL()
  * @method static Cobweb COBWEB()
  * @method static CocoaBlock COCOA_POD()
+ * @method static ChemistryTable COMPOUND_CREATOR()
  * @method static Flower CORNFLOWER()
  * @method static Opaque CRACKED_STONE_BRICKS()
  * @method static CraftingTable CRAFTING_TABLE()
@@ -198,6 +200,7 @@ use function assert;
  * @method static Element ELEMENT_CHLORINE()
  * @method static Element ELEMENT_CHROMIUM()
  * @method static Element ELEMENT_COBALT()
+ * @method static ChemistryTable ELEMENT_CONSTRUCTOR()
  * @method static Element ELEMENT_COPERNICIUM()
  * @method static Element ELEMENT_COPPER()
  * @method static Element ELEMENT_CURIUM()
@@ -395,6 +398,7 @@ use function assert;
  * @method static Opaque IRON_ORE()
  * @method static Trapdoor IRON_TRAPDOOR()
  * @method static ItemFrame ITEM_FRAME()
+ * @method static Jukebox JUKEBOX()
  * @method static WoodenButton JUNGLE_BUTTON()
  * @method static WoodenDoor JUNGLE_DOOR()
  * @method static WoodenFence JUNGLE_FENCE()
@@ -409,6 +413,7 @@ use function assert;
  * @method static WoodenStairs JUNGLE_STAIRS()
  * @method static WoodenTrapdoor JUNGLE_TRAPDOOR()
  * @method static Wood JUNGLE_WOOD()
+ * @method static ChemistryTable LAB_TABLE()
  * @method static Ladder LADDER()
  * @method static Lantern LANTERN()
  * @method static Opaque LAPIS_LAZULI()
@@ -454,6 +459,7 @@ use function assert;
  * @method static GlassPane MAGENTA_STAINED_GLASS_PANE()
  * @method static Wool MAGENTA_WOOL()
  * @method static Magma MAGMA()
+ * @method static ChemistryTable MATERIAL_REDUCER()
  * @method static Melon MELON()
  * @method static MelonStem MELON_STEM()
  * @method static Skull MOB_HEAD()
@@ -716,6 +722,8 @@ final class VanillaBlocks{
 		self::register("andesite_wall", $factory->get(139, 4));
 		self::register("anvil", $factory->get(145));
 		self::register("azure_bluet", $factory->get(38, 3));
+		self::register("bamboo", $factory->get(418));
+		self::register("bamboo_sapling", $factory->get(419));
 		self::register("banner", $factory->get(176));
 		self::register("barrier", $factory->get(416));
 		self::register("bed", $factory->get(26));
@@ -790,6 +798,7 @@ final class VanillaBlocks{
 		self::register("cobblestone_wall", $factory->get(139));
 		self::register("cobweb", $factory->get(30));
 		self::register("cocoa_pod", $factory->get(127));
+		self::register("compound_creator", $factory->get(238));
 		self::register("cornflower", $factory->get(38, 9));
 		self::register("cracked_stone_bricks", $factory->get(98, 2));
 		self::register("crafting_table", $factory->get(58));
@@ -859,6 +868,7 @@ final class VanillaBlocks{
 		self::register("element_chlorine", $factory->get(283));
 		self::register("element_chromium", $factory->get(290));
 		self::register("element_cobalt", $factory->get(293));
+		self::register("element_constructor", $factory->get(238, 8));
 		self::register("element_copernicium", $factory->get(378));
 		self::register("element_copper", $factory->get(295));
 		self::register("element_curium", $factory->get(362));
@@ -1056,6 +1066,7 @@ final class VanillaBlocks{
 		self::register("iron_ore", $factory->get(15));
 		self::register("iron_trapdoor", $factory->get(167));
 		self::register("item_frame", $factory->get(199));
+		self::register("jukebox", $factory->get(84));
 		self::register("jungle_button", $factory->get(398));
 		self::register("jungle_door", $factory->get(195));
 		self::register("jungle_fence", $factory->get(85, 3));
@@ -1070,6 +1081,7 @@ final class VanillaBlocks{
 		self::register("jungle_stairs", $factory->get(136));
 		self::register("jungle_trapdoor", $factory->get(403));
 		self::register("jungle_wood", $factory->get(467, 3));
+		self::register("lab_table", $factory->get(238, 12));
 		self::register("ladder", $factory->get(65, 2));
 		self::register("lantern", $factory->get(463));
 		self::register("lapis_lazuli", $factory->get(22));
@@ -1115,6 +1127,7 @@ final class VanillaBlocks{
 		self::register("magenta_stained_glass_pane", $factory->get(160, 2));
 		self::register("magenta_wool", $factory->get(35, 2));
 		self::register("magma", $factory->get(213));
+		self::register("material_reducer", $factory->get(238, 4));
 		self::register("melon", $factory->get(103));
 		self::register("melon_stem", $factory->get(105));
 		self::register("mob_head", $factory->get(144, 2));

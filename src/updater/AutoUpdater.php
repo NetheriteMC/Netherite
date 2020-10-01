@@ -28,6 +28,7 @@ use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use pocketmine\utils\VersionString;
+use pocketmine\VersionInfo;
 use function date;
 use function sprintf;
 use function str_repeat;
@@ -41,10 +42,7 @@ class AutoUpdater{
 	protected $server;
 	/** @var string */
 	protected $endpoint;
-	/**
-	 * @var mixed[]|null
-	 * @phpstan-var array<string, mixed>|null
-	 */
+	/** @var UpdateInfo|null */
 	protected $updateInfo = null;
 	/** @var VersionString|null */
 	protected $newVersion;
@@ -57,7 +55,7 @@ class AutoUpdater{
 		$this->logger = new \PrefixedLogger($server->getLogger(), "Auto Updater");
 		$this->endpoint = "http://$endpoint/api/";
 
-		if((bool) $server->getProperty("auto-updater.enabled", true)){
+		if((bool) $server->getConfigGroup()->getProperty("auto-updater.enabled", true)){
 			$this->doCheck();
 		}
 	}
@@ -68,22 +66,19 @@ class AutoUpdater{
 
 	/**
 	 * Callback used at the end of the update checking task
-	 *
-	 * @param mixed[] $updateInfo
-	 * @phpstan-param array<string, mixed> $updateInfo
 	 */
-	public function checkUpdateCallback(array $updateInfo) : void{
+	public function checkUpdateCallback(UpdateInfo $updateInfo) : void{
 		$this->updateInfo = $updateInfo;
 		$this->checkUpdate();
 		if($this->hasUpdate()){
 			(new UpdateNotifyEvent($this))->call();
-			if((bool) $this->server->getProperty("auto-updater.on-update.warn-console", true)){
+			if((bool) $this->server->getConfigGroup()->getProperty("auto-updater.on-update.warn-console", true)){
 				$this->showConsoleUpdate();
 			}
 		}else{
-			if(!\pocketmine\IS_DEVELOPMENT_BUILD and $this->getChannel() !== "stable"){
+			if(!VersionInfo::IS_DEVELOPMENT_BUILD and $this->getChannel() !== "stable"){
 				$this->showChannelSuggestionStable();
-			}elseif(\pocketmine\IS_DEVELOPMENT_BUILD and $this->getChannel() === "stable"){
+			}elseif(VersionInfo::IS_DEVELOPMENT_BUILD and $this->getChannel() === "stable"){
 				$this->showChannelSuggestionBeta();
 			}
 		}
@@ -101,12 +96,11 @@ class AutoUpdater{
 	 */
 	public function showConsoleUpdate() : void{
 		$messages = [
-			"Your version of " . $this->server->getName() . " is out of date. Version " . $this->newVersion->getFullVersion(true) . " was released on " . date("D M j h:i:s Y", $this->updateInfo["date"])
+			"Your version of " . $this->server->getName() . " is out of date. Version " . $this->newVersion->getFullVersion(true) . " was released on " . date("D M j h:i:s Y", $this->updateInfo->date)
 		];
-		if($this->updateInfo["details_url"] !== null){
-			$messages[] = "Details: " . $this->updateInfo["details_url"];
-		}
-		$messages[] = "Download: " . $this->updateInfo["download_url"];
+
+		$messages[] = "Details: " . $this->updateInfo->details_url;
+		$messages[] = "Download: " . $this->updateInfo->download_url;
 
 		$this->printConsoleMessage($messages, \LogLevel::WARNING);
 	}
@@ -147,11 +141,8 @@ class AutoUpdater{
 
 	/**
 	 * Returns the last retrieved update data.
-	 *
-	 * @return mixed[]|null
-	 * @phpstan-return array<string, mixed>|null
 	 */
-	public function getUpdateInfo() : ?array{
+	public function getUpdateInfo() : ?UpdateInfo{
 		return $this->updateInfo;
 	}
 
@@ -169,9 +160,9 @@ class AutoUpdater{
 		if($this->updateInfo === null){
 			return;
 		}
-		$currentVersion = new VersionString(\pocketmine\BASE_VERSION, \pocketmine\IS_DEVELOPMENT_BUILD, \pocketmine\BUILD_NUMBER);
+		$currentVersion = VersionInfo::getVersionObj();
 		try{
-			$newVersion = new VersionString($this->updateInfo["base_version"], $this->updateInfo["is_dev"], $this->updateInfo["build"]);
+			$newVersion = new VersionString($this->updateInfo->base_version, $this->updateInfo->is_dev, $this->updateInfo->build);
 		}catch(\InvalidArgumentException $e){
 			//Invalid version returned from API, assume there's no update
 			$this->logger->debug("Assuming no update because \"" . $e->getMessage() . "\"");
@@ -187,7 +178,7 @@ class AutoUpdater{
 	 * Returns the channel used for update checking (stable, beta, dev)
 	 */
 	public function getChannel() : string{
-		$channel = strtolower($this->server->getProperty("auto-updater.preferred-channel", "stable"));
+		$channel = strtolower($this->server->getConfigGroup()->getProperty("auto-updater.preferred-channel", "stable"));
 		if($channel !== "stable" and $channel !== "beta" and $channel !== "alpha" and $channel !== "development"){
 			$channel = "stable";
 		}

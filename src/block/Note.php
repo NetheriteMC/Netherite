@@ -39,7 +39,7 @@ class Note extends Opaque{
 
 	public function readStateFromWorld() : void{
 		parent::readStateFromWorld();
-		$tile = $this->pos->getWorldNonNull()->getTile($this->pos);
+		$tile = $this->pos->getWorld()->getTile($this->pos);
 		if($tile instanceof TileNote){
 			$this->pitch = $tile->getPitch();
 		}else{
@@ -49,7 +49,7 @@ class Note extends Opaque{
 
 	public function writeStateToWorld() : void{
 		parent::writeStateToWorld();
-		$tile = $this->pos->getWorldNonNull()->getTile($this->pos);
+		$tile = $this->pos->getWorld()->getTile($this->pos);
 		assert($tile instanceof TileNote);
 		$tile->setPitch($this->pitch);
 	}
@@ -62,11 +62,13 @@ class Note extends Opaque{
 		return $this->pitch;
 	}
 
-	public function setPitch(int $pitch) : void{
+	/** @return $this */
+	public function setPitch(int $pitch) : self{
 		if($pitch < self::MIN_PITCH or $pitch > self::MAX_PITCH){
 			throw new \InvalidArgumentException("Pitch must be in range " . self::MIN_PITCH . " - " . self::MAX_PITCH);
 		}
 		$this->pitch = $pitch;
+		return $this;
 	}
 
 	//TODO

@@ -6,11 +6,6 @@ parameters:
 			path: ../../../build/make-release.php
 
 		-
-			message: "#^Parameter \\#2 \\$delim_char of function preg_quote expects string, string\\|null given\\.$#"
-			count: 1
-			path: ../../../build/server-phar.php
-
-		-
 			message: "#^Parameter \\#1 \\$name of method pocketmine\\\\world\\\\generator\\\\GeneratorManager\\:\\:getGenerator\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: ../../../src/Server.php
@@ -24,11 +19,6 @@ parameters:
 			message: "#^Cannot call method setFullBlock\\(\\) on pocketmine\\\\world\\\\format\\\\Chunk\\|null\\.$#"
 			count: 1
 			path: ../../../src/block/Block.php
-
-		-
-			message: "#^Parameter \\#2 \\$item of method pocketmine\\\\world\\\\World\\:\\:dropItem\\(\\) expects pocketmine\\\\item\\\\Item, pocketmine\\\\item\\\\Item\\|null given\\.$#"
-			count: 1
-			path: ../../../src/block/ItemFrame.php
 
 		-
 			message: "#^Parameter \\#2 \\$value of method pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\:\\:setInt\\(\\) expects int, int\\|null given\\.$#"
@@ -54,31 +44,6 @@ parameters:
 			message: "#^Parameter \\#3 \\$z of method pocketmine\\\\world\\\\World\\:\\:getTileAt\\(\\) expects int, int\\|null given\\.$#"
 			count: 1
 			path: ../../../src/block/tile/Chest.php
-
-		-
-			message: "#^Argument of an invalid type pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: ../../../src/block/tile/Chest.php
-
-		-
-			message: "#^Argument of an invalid type pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: ../../../src/block/tile/BrewingStand.php
-
-		-
-			message: "#^Argument of an invalid type pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: ../../../src/block/tile/Furnace.php
-
-		-
-			message: "#^Argument of an invalid type pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: ../../../src/block/tile/Hopper.php
-
-		-
-			message: "#^Parameter \\#1 \\$nbt of method pocketmine\\\\block\\\\tile\\\\Tile\\:\\:readSaveData\\(\\) expects pocketmine\\\\nbt\\\\tag\\\\CompoundTag, pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null given\\.$#"
-			count: 1
-			path: ../../../src/block/tile/Tile.php
 
 		-
 			message: "#^Parameter \\#2 \\$replace of function str_replace expects array\\|string, string\\|null given\\.$#"
@@ -151,64 +116,14 @@ parameters:
 			path: ../../../src/command/defaults/SetWorldSpawnCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$name of method pocketmine\\\\Server\\:\\:getPlayer\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: ../../../src/command/defaults/TellCommand.php
-
-		-
 			message: "#^Cannot call method getTime\\(\\) on pocketmine\\\\world\\\\World\\|null\\.$#"
 			count: 1
 			path: ../../../src/command/defaults/TimeCommand.php
 
 		-
-			message: "#^Cannot call method getAllValues\\(\\) on pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null\\.$#"
-			count: 3
-			path: ../../../src/entity/Entity.php
-
-		-
 			message: "#^Cannot call method addEntity\\(\\) on pocketmine\\\\world\\\\format\\\\Chunk\\|null\\.$#"
 			count: 1
 			path: ../../../src/entity/Entity.php
-
-		-
-			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\protocol\\\\AddActorPacket\\:\\:\\$type \\(string\\) does not accept string\\|null\\.$#"
-			count: 1
-			path: ../../../src/entity/Entity.php
-
-		-
-			message: "#^Parameter \\#1 \\$attribute of method pocketmine\\\\entity\\\\AttributeMap\\:\\:add\\(\\) expects pocketmine\\\\entity\\\\Attribute, pocketmine\\\\entity\\\\Attribute\\|null given\\.$#"
-			count: 1
-			path: ../../../src/entity/HungerManager.php
-
-		-
-			message: "#^Method pocketmine\\\\entity\\\\HungerManager\\:\\:fetchAttribute\\(\\) should return pocketmine\\\\entity\\\\Attribute but returns pocketmine\\\\entity\\\\Attribute\\|null\\.$#"
-			count: 1
-			path: ../../../src/entity/HungerManager.php
-
-		-
-			message: "#^Cannot call method getEffectLevel\\(\\) on pocketmine\\\\entity\\\\effect\\\\EffectInstance\\|null\\.$#"
-			count: 3
-			path: ../../../src/entity/Living.php
-
-		-
-			message: "#^Cannot call method attack\\(\\) on pocketmine\\\\entity\\\\Entity\\|null\\.$#"
-			count: 1
-			path: ../../../src/entity/Living.php
-
-		-
-			message: "#^Parameter \\#2 \\$entity of class pocketmine\\\\event\\\\entity\\\\EntityDamageByEntityEvent constructor expects pocketmine\\\\entity\\\\Entity, pocketmine\\\\entity\\\\Entity\\|null given\\.$#"
-			count: 1
-			path: ../../../src/entity/Living.php
-
-		-
-			message: "#^Method pocketmine\\\\entity\\\\object\\\\Painting\\:\\:getMotive\\(\\) should return pocketmine\\\\entity\\\\object\\\\PaintingMotive but returns pocketmine\\\\entity\\\\object\\\\PaintingMotive\\|null\\.$#"
-			count: 1
-			path: ../../../src/entity/object/Painting.php
-
-		-
-			message: "#^Cannot call method getEffectLevel\\(\\) on pocketmine\\\\entity\\\\effect\\\\EffectInstance\\|null\\.$#"
-			count: 2
-			path: ../../../src/event/entity/EntityDamageByEntityEvent.php
 
 		-
 			message: "#^Parameter \\#2 \\$oldContents of method pocketmine\\\\inventory\\\\InventoryListener\\:\\:onContentChange\\(\\) expects array\\<pocketmine\\\\item\\\\Item\\>, array\\<int, pocketmine\\\\item\\\\Item\\|null\\> given\\.$#"
@@ -224,26 +139,6 @@ parameters:
 			message: "#^Parameter \\#3 \\$repetitions of class pocketmine\\\\event\\\\inventory\\\\CraftItemEvent constructor expects int, int\\|null given\\.$#"
 			count: 1
 			path: ../../../src/inventory/transaction/CraftingTransaction.php
-
-		-
-			message: "#^Method pocketmine\\\\item\\\\Item\\:\\:getNamedTag\\(\\) should return pocketmine\\\\nbt\\\\tag\\\\CompoundTag but returns pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/item/Item.php
-
-		-
-			message: "#^Cannot clone pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/item/Item.php
-
-		-
-			message: "#^Parameter \\#2 \\$tag of method pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\:\\:setTag\\(\\) expects pocketmine\\\\nbt\\\\tag\\\\Tag, pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null given\\.$#"
-			count: 1
-			path: ../../../src/item/Item.php
-
-		-
-			message: "#^Parameter \\#1 \\$object of function get_class expects object, pocketmine\\\\nbt\\\\tag\\\\Tag\\|null given\\.$#"
-			count: 1
-			path: ../../../src/item/Item.php
 
 		-
 			message: "#^Method pocketmine\\\\item\\\\enchantment\\\\Enchantment\\:\\:BLAST_PROTECTION\\(\\) should return pocketmine\\\\item\\\\enchantment\\\\Enchantment but returns pocketmine\\\\item\\\\enchantment\\\\Enchantment\\|null\\.$#"
@@ -341,11 +236,6 @@ parameters:
 			path: ../../../src/item/enchantment/Enchantment.php
 
 		-
-			message: "#^Method pocketmine\\\\item\\\\enchantment\\\\EnchantmentList\\:\\:getSlot\\(\\) should return pocketmine\\\\item\\\\enchantment\\\\EnchantmentEntry but returns pocketmine\\\\item\\\\enchantment\\\\EnchantmentEntry\\|null\\.$#"
-			count: 1
-			path: ../../../src/item/enchantment/EnchantmentList.php
-
-		-
 			message: "#^Cannot call method getUsername\\(\\) on pocketmine\\\\player\\\\PlayerInfo\\|null\\.$#"
 			count: 1
 			path: ../../../src/network/NetworkSessionManager.php
@@ -421,21 +311,6 @@ parameters:
 			path: ../../../src/network/mcpe/NetworkSession.php
 
 		-
-			message: "#^Cannot call method getLocation\\(\\) on pocketmine\\\\player\\\\Player\\|null\\.$#"
-			count: 3
-			path: ../../../src/network/mcpe/NetworkSession.php
-
-		-
-			message: "#^Cannot call method getId\\(\\) on pocketmine\\\\player\\\\Player\\|null\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/NetworkSession.php
-
-		-
-			message: "#^Cannot call method getOffsetPosition\\(\\) on pocketmine\\\\player\\\\Player\\|null\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/NetworkSession.php
-
-		-
 			message: "#^Cannot call method syncCreative\\(\\) on pocketmine\\\\network\\\\mcpe\\\\InventoryManager\\|null\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/NetworkSession.php
@@ -443,6 +318,16 @@ parameters:
 		-
 			message: "#^Parameter \\#1 \\$target of method pocketmine\\\\command\\\\Command\\:\\:testPermissionSilent\\(\\) expects pocketmine\\\\command\\\\CommandSender, pocketmine\\\\player\\\\Player\\|null given\\.$#"
 			count: 1
+			path: ../../../src/network/mcpe/NetworkSession.php
+
+		-
+			message: "#^Cannot call method getLanguage\\(\\) on pocketmine\\\\player\\\\Player\\|null\\.$#"
+			count: 1
+			path: ../../../src/network/mcpe/NetworkSession.php
+
+		-
+			message: "#^Cannot call method getLocation\\(\\) on pocketmine\\\\player\\\\Player\\|null\\.$#"
+			count: 2
 			path: ../../../src/network/mcpe/NetworkSession.php
 
 		-
@@ -462,16 +347,11 @@ parameters:
 
 		-
 			message: "#^Cannot call method getString\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 3
-			path: ../../../src/network/mcpe/convert/RuntimeBlockMapping.php
-
-		-
-			message: "#^Cannot call method getShort\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/convert/RuntimeBlockMapping.php
 
 		-
-			message: "#^Cannot call method equals\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
+			message: "#^Parameter \\#1 \\$that of method pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\:\\:equals\\(\\) expects pocketmine\\\\nbt\\\\tag\\\\Tag, pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null given\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/convert/RuntimeBlockMapping.php
 
@@ -501,59 +381,24 @@ parameters:
 			path: ../../../src/network/mcpe/encryption/PrepareEncryptionTask.php
 
 		-
-			message: "#^Parameter \\#1 \\$playerInfo of class pocketmine\\\\event\\\\player\\\\PlayerPreLoginEvent constructor expects pocketmine\\\\player\\\\PlayerInfo, pocketmine\\\\player\\\\PlayerInfo\\|null given\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/handler/LoginPacketHandler.php
-
-		-
-			message: "#^Cannot call method getUsername\\(\\) on pocketmine\\\\player\\\\PlayerInfo\\|null\\.$#"
-			count: 2
-			path: ../../../src/network/mcpe/handler/LoginPacketHandler.php
-
-		-
-			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\protocol\\\\StartGamePacket\\:\\:\\$blockTable \\(pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\CacheableNbt\\<pocketmine\\\\nbt\\\\tag\\\\ListTag\\>\\) does not accept pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\CacheableNbt\\<pocketmine\\\\nbt\\\\tag\\\\ListTag\\>\\|null\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/handler/PreSpawnPacketHandler.php
-
-		-
 			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\protocol\\\\LevelSoundEventPacket\\:\\:\\$position \\(pocketmine\\\\math\\\\Vector3\\) does not accept pocketmine\\\\math\\\\Vector3\\|null\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/protocol/LevelSoundEventPacket.php
 
 		-
-			message: "#^Parameter \\#1 \\$eid of method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\serializer\\\\NetworkBinaryStream\\:\\:putEntityUniqueId\\(\\) expects int, int\\|null given\\.$#"
+			message: "#^Parameter \\#1 \\$eid of method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\serializer\\\\PacketSerializer\\:\\:putEntityUniqueId\\(\\) expects int, int\\|null given\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/protocol/SetScorePacket.php
 
 		-
-			message: "#^Parameter \\#1 \\$v of method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\serializer\\\\NetworkBinaryStream\\:\\:putString\\(\\) expects string, string\\|null given\\.$#"
+			message: "#^Parameter \\#1 \\$v of method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\serializer\\\\PacketSerializer\\:\\:putString\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/protocol/SetScorePacket.php
 
 		-
-			message: "#^Parameter \\#1 \\$eid of method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\serializer\\\\NetworkBinaryStream\\:\\:putEntityUniqueId\\(\\) expects int, int\\|null given\\.$#"
+			message: "#^Parameter \\#1 \\$eid of method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\serializer\\\\PacketSerializer\\:\\:putEntityUniqueId\\(\\) expects int, int\\|null given\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/protocol/SetScoreboardIdentityPacket.php
-
-		-
-			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\SkinData\\:\\:\\$capeImage \\(pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\SkinImage\\) does not accept pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\SkinImage\\|null\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/protocol/types/SkinData.php
-
-		-
-			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\entity\\\\EntityLink\\:\\:\\$fromEntityUniqueId \\(int\\) does not accept int\\|null\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/protocol/types/entity/EntityLink.php
-
-		-
-			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\entity\\\\EntityLink\\:\\:\\$toEntityUniqueId \\(int\\) does not accept int\\|null\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/protocol/types/entity/EntityLink.php
-
-		-
-			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\protocol\\\\types\\\\entity\\\\EntityLink\\:\\:\\$type \\(int\\) does not accept int\\|null\\.$#"
-			count: 1
-			path: ../../../src/network/mcpe/protocol/types/entity/EntityLink.php
 
 		-
 			message: "#^Parameter \\#1 \\$v of method pocketmine\\\\utils\\\\BinaryStream\\:\\:putVarInt\\(\\) expects int, int\\|null given\\.$#"
@@ -567,11 +412,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$str of function trim expects string, string\\|null given\\.$#"
-			count: 4
-			path: ../../../src/permission/BanEntry.php
-
-		-
-			message: "#^Parameter \\#1 \\$date of static method pocketmine\\\\permission\\\\BanEntry\\:\\:parseDate\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: ../../../src/permission/BanEntry.php
 
@@ -579,11 +419,6 @@ parameters:
 			message: "#^Method pocketmine\\\\permission\\\\DefaultPermissions\\:\\:registerPermission\\(\\) should return pocketmine\\\\permission\\\\Permission but returns pocketmine\\\\permission\\\\Permission\\|null\\.$#"
 			count: 1
 			path: ../../../src/permission/DefaultPermissions.php
-
-		-
-			message: "#^Cannot call method getAllValues\\(\\) on pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
 
 		-
 			message: "#^Cannot call method getSafeSpawn\\(\\) on pocketmine\\\\world\\\\World\\|null\\.$#"
@@ -597,11 +432,6 @@ parameters:
 
 		-
 			message: "#^Cannot call method registerChunkListener\\(\\) on pocketmine\\\\world\\\\World\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
-			message: "#^Parameter \\#1 \\$world of method pocketmine\\\\entity\\\\Human\\:\\:__construct\\(\\) expects pocketmine\\\\world\\\\World, pocketmine\\\\world\\\\World\\|null given\\.$#"
 			count: 1
 			path: ../../../src/player/Player.php
 
@@ -746,41 +576,6 @@ parameters:
 			path: ../../../src/player/Player.php
 
 		-
-			message: "#^Cannot call method getWorldNonNull\\(\\) on pocketmine\\\\world\\\\Position\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
-			message: "#^Cannot call method getFloorX\\(\\) on pocketmine\\\\world\\\\Position\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
-			message: "#^Cannot call method getFloorY\\(\\) on pocketmine\\\\world\\\\Position\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
-			message: "#^Cannot call method getFloorZ\\(\\) on pocketmine\\\\world\\\\Position\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
-			message: "#^Cannot access property \\$x on pocketmine\\\\world\\\\Position\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
-			message: "#^Cannot access property \\$y on pocketmine\\\\world\\\\Position\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
-			message: "#^Cannot access property \\$z on pocketmine\\\\world\\\\Position\\|null\\.$#"
-			count: 1
-			path: ../../../src/player/Player.php
-
-		-
 			message: "#^Cannot call method onDeath\\(\\) on pocketmine\\\\network\\\\mcpe\\\\NetworkSession\\|null\\.$#"
 			count: 1
 			path: ../../../src/player/Player.php
@@ -841,14 +636,9 @@ parameters:
 			path: ../../../src/scheduler/DumpWorkerMemoryTask.php
 
 		-
-			message: "#^Parameter \\#1 \\$options of method Thread\\:\\:start\\(\\) expects int, int\\|null given\\.$#"
+			message: "#^Cannot access property \\$date on pocketmine\\\\updater\\\\UpdateInfo\\|null\\.$#"
 			count: 1
-			path: ../../../src/thread/Thread.php
-
-		-
-			message: "#^Parameter \\#1 \\$options of method Thread\\:\\:start\\(\\) expects int, int\\|null given\\.$#"
-			count: 1
-			path: ../../../src/thread/Worker.php
+			path: ../../../src/updater/AutoUpdater.php
 
 		-
 			message: "#^Cannot call method getFullVersion\\(\\) on pocketmine\\\\utils\\\\VersionString\\|null\\.$#"
@@ -856,17 +646,12 @@ parameters:
 			path: ../../../src/updater/AutoUpdater.php
 
 		-
-			message: "#^Offset 'date' does not exist on array\\<string, mixed\\>\\|null\\.$#"
+			message: "#^Cannot access property \\$details_url on pocketmine\\\\updater\\\\UpdateInfo\\|null\\.$#"
 			count: 1
 			path: ../../../src/updater/AutoUpdater.php
 
 		-
-			message: "#^Offset 'details_url' does not exist on array\\<string, mixed\\>\\|null\\.$#"
-			count: 2
-			path: ../../../src/updater/AutoUpdater.php
-
-		-
-			message: "#^Offset 'download_url' does not exist on array\\<string, mixed\\>\\|null\\.$#"
+			message: "#^Cannot access property \\$download_url on pocketmine\\\\updater\\\\UpdateInfo\\|null\\.$#"
 			count: 1
 			path: ../../../src/updater/AutoUpdater.php
 
@@ -879,16 +664,6 @@ parameters:
 			message: "#^Parameter \\#1 \\$str of function trim expects string, string\\|null given\\.$#"
 			count: 1
 			path: ../../../src/utils/Config.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, string\\|null given\\.$#"
-			count: 2
-			path: ../../../src/utils/TextFormat.php
-
-		-
-			message: "#^Method pocketmine\\\\utils\\\\TextFormat\\:\\:colorize\\(\\) should return string but returns string\\|null\\.$#"
-			count: 1
-			path: ../../../src/utils/TextFormat.php
 
 		-
 			message: "#^Method pocketmine\\\\utils\\\\Utils\\:\\:printable\\(\\) should return string but returns string\\|null\\.$#"
@@ -981,7 +756,17 @@ parameters:
 			path: ../../../src/world/biome/BiomeRegistry.php
 
 		-
+			message: "#^Only booleans are allowed in an if condition, bool\\|null given\\.$#"
+			count: 2
+			path: ../../../src/world/format/Chunk.php
+
+		-
 			message: "#^Method pocketmine\\\\world\\\\format\\\\Chunk\\:\\:getSubChunk\\(\\) should return pocketmine\\\\world\\\\format\\\\SubChunkInterface but returns pocketmine\\\\world\\\\format\\\\SubChunk\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/Chunk.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\Chunk\\:\\:getWritableSubChunk\\(\\) should return pocketmine\\\\world\\\\format\\\\SubChunk but returns pocketmine\\\\world\\\\format\\\\SubChunk\\|null\\.$#"
 			count: 1
 			path: ../../../src/world/format/Chunk.php
 
@@ -989,116 +774,6 @@ parameters:
 			message: "#^Method pocketmine\\\\world\\\\format\\\\HeightArray\\:\\:get\\(\\) should return int but returns int\\|null\\.$#"
 			count: 1
 			path: ../../../src/world/format/HeightArray.php
-
-		-
-			message: "#^Method pocketmine\\\\world\\\\format\\\\io\\\\data\\\\JavaWorldData\\:\\:load\\(\\) should return pocketmine\\\\nbt\\\\tag\\\\CompoundTag but returns pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/data/JavaWorldData.php
-
-		-
-			message: "#^Cannot call method getListTag\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 3
-			path: ../../../src/world/format/io/region/Anvil.php
-
-		-
-			message: "#^Cannot call method hasTag\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 4
-			path: ../../../src/world/format/io/region/Anvil.php
-
-		-
-			message: "#^Cannot call method getIntArray\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/Anvil.php
-
-		-
-			message: "#^Cannot call method getByteArray\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/Anvil.php
-
-		-
-			message: "#^Cannot call method getInt\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 2
-			path: ../../../src/world/format/io/region/Anvil.php
-
-		-
-			message: "#^Parameter \\#2 \\$list of static method pocketmine\\\\world\\\\format\\\\io\\\\region\\\\RegionWorldProvider\\:\\:getCompoundList\\(\\) expects pocketmine\\\\nbt\\\\tag\\\\ListTag, pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null given\\.$#"
-			count: 2
-			path: ../../../src/world/format/io/region/Anvil.php
-
-		-
-			message: "#^Cannot call method getByte\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/Anvil.php
-
-		-
-			message: "#^Cannot call method getListTag\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 3
-			path: ../../../src/world/format/io/region/PMAnvil.php
-
-		-
-			message: "#^Cannot call method hasTag\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 4
-			path: ../../../src/world/format/io/region/PMAnvil.php
-
-		-
-			message: "#^Cannot call method getIntArray\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/PMAnvil.php
-
-		-
-			message: "#^Cannot call method getByteArray\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/PMAnvil.php
-
-		-
-			message: "#^Cannot call method getInt\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 2
-			path: ../../../src/world/format/io/region/PMAnvil.php
-
-		-
-			message: "#^Parameter \\#2 \\$list of static method pocketmine\\\\world\\\\format\\\\io\\\\region\\\\RegionWorldProvider\\:\\:getCompoundList\\(\\) expects pocketmine\\\\nbt\\\\tag\\\\ListTag, pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null given\\.$#"
-			count: 2
-			path: ../../../src/world/format/io/region/PMAnvil.php
-
-		-
-			message: "#^Cannot call method getByte\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/PMAnvil.php
-
-		-
-			message: "#^Cannot call method getByteArray\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 3
-			path: ../../../src/world/format/io/region/McRegion.php
-
-		-
-			message: "#^Cannot call method hasTag\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 6
-			path: ../../../src/world/format/io/region/McRegion.php
-
-		-
-			message: "#^Cannot call method getIntArray\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/McRegion.php
-
-		-
-			message: "#^Cannot call method getInt\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 2
-			path: ../../../src/world/format/io/region/McRegion.php
-
-		-
-			message: "#^Cannot call method getListTag\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 2
-			path: ../../../src/world/format/io/region/McRegion.php
-
-		-
-			message: "#^Parameter \\#2 \\$list of static method pocketmine\\\\world\\\\format\\\\io\\\\region\\\\RegionWorldProvider\\:\\:getCompoundList\\(\\) expects pocketmine\\\\nbt\\\\tag\\\\ListTag, pocketmine\\\\nbt\\\\tag\\\\ListTag\\|null given\\.$#"
-			count: 2
-			path: ../../../src/world/format/io/region/McRegion.php
-
-		-
-			message: "#^Cannot call method getByte\\(\\) on pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/McRegion.php
 
 		-
 			message: "#^Cannot call method readChunk\\(\\) on pocketmine\\\\world\\\\format\\\\io\\\\region\\\\RegionLoader\\|null\\.$#"
@@ -1211,11 +886,6 @@ parameters:
 			path: ../../../src/world/generator/normal/Normal.php
 
 		-
-			message: "#^Offset int does not exist on array\\<array\\<float\\>\\>\\|null\\.$#"
-			count: 1
-			path: ../../../src/world/generator/normal/Normal.php
-
-		-
 			message: "#^Cannot call method setFullBlock\\(\\) on pocketmine\\\\world\\\\format\\\\Chunk\\|null\\.$#"
 			count: 3
 			path: ../../../src/world/generator/normal/Normal.php
@@ -1246,7 +916,17 @@ parameters:
 			path: ../../../src/world/light/BlockLightUpdate.php
 
 		-
+			message: "#^Cannot call method getFullBlock\\(\\) on pocketmine\\\\world\\\\format\\\\SubChunk\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/light/BlockLightUpdate.php
+
+		-
 			message: "#^Only numeric types are allowed in \\-, int\\|null given on the right side\\.$#"
+			count: 1
+			path: ../../../src/world/light/BlockLightUpdate.php
+
+		-
+			message: "#^Parameter \\#4 \\$newLevel of method pocketmine\\\\world\\\\light\\\\LightUpdate\\:\\:setAndUpdateLight\\(\\) expects int, int\\|null given\\.$#"
 			count: 1
 			path: ../../../src/world/light/BlockLightUpdate.php
 
@@ -1276,24 +956,34 @@ parameters:
 			path: ../../../src/world/light/SkyLightUpdate.php
 
 		-
-			message: "#^Only numeric types are allowed in \\-, int\\|null given on the right side\\.$#"
+			message: "#^Cannot call method getHeightMap\\(\\) on pocketmine\\\\world\\\\format\\\\Chunk\\|null\\.$#"
 			count: 1
 			path: ../../../src/world/light/SkyLightUpdate.php
 
 		-
-			message: "#^Parameter \\#4 \\$entityType of static method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\LevelSoundEventPacket\\:\\:create\\(\\) expects string, string\\|null given\\.$#"
+			message: "#^Cannot call method getFullBlock\\(\\) on pocketmine\\\\world\\\\format\\\\SubChunk\\|null\\.$#"
 			count: 1
-			path: ../../../src/world/sound/EntityLandSound.php
+			path: ../../../src/world/light/SkyLightUpdate.php
 
 		-
-			message: "#^Parameter \\#4 \\$entityType of static method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\LevelSoundEventPacket\\:\\:create\\(\\) expects string, string\\|null given\\.$#"
+			message: "#^Cannot call method recalculateHeightMapColumn\\(\\) on pocketmine\\\\world\\\\format\\\\Chunk\\|null\\.$#"
 			count: 1
-			path: ../../../src/world/sound/EntityLongFallSound.php
+			path: ../../../src/world/light/SkyLightUpdate.php
 
 		-
-			message: "#^Parameter \\#4 \\$entityType of static method pocketmine\\\\network\\\\mcpe\\\\protocol\\\\LevelSoundEventPacket\\:\\:create\\(\\) expects string, string\\|null given\\.$#"
+			message: "#^Only booleans are allowed in an if condition, bool\\|null given\\.$#"
 			count: 1
-			path: ../../../src/world/sound/EntityShortFallSound.php
+			path: ../../../src/world/light/SkyLightUpdate.php
+
+		-
+			message: "#^Cannot call method setHeightMap\\(\\) on pocketmine\\\\world\\\\format\\\\Chunk\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/light/SkyLightUpdate.php
+
+		-
+			message: "#^Only numeric types are allowed in \\-, int\\|null given on the right side\\.$#"
+			count: 1
+			path: ../../../src/world/light/SkyLightUpdate.php
 
 		-
 			message: "#^Property pocketmine\\\\event\\\\HandlerListManagerTest\\:\\:\\$isValidFunc \\(Closure\\) does not accept Closure\\|null\\.$#"
@@ -1306,7 +996,7 @@ parameters:
 			path: ../../phpunit/event/HandlerListManagerTest.php
 
 		-
-			message: "#^Property pocketmine\\\\network\\\\mcpe\\\\handler\\\\StupidJsonDecodeTest\\:\\:\\$stupidJsonDecodeFunc \\(Closure\\) does not accept Closure\\|null\\.$#"
+			message: "#^Cannot call method cancel\\(\\) on pocketmine\\\\scheduler\\\\TaskHandler\\|null\\.$#"
 			count: 1
-			path: ../../phpunit/network/mcpe/handler/StupidJsonDecodeTest.php
+			path: ../../plugins/TesterPlugin/src/pmmp/TesterPlugin/CheckTestCompletionTask.php
 

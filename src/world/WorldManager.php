@@ -27,6 +27,7 @@ use pocketmine\entity\Entity;
 use pocketmine\event\world\WorldInitEvent;
 use pocketmine\event\world\WorldLoadEvent;
 use pocketmine\event\world\WorldUnloadEvent;
+use pocketmine\player\ChunkSelector;
 use pocketmine\Server;
 use pocketmine\timings\Timings;
 use pocketmine\utils\Limits;
@@ -42,7 +43,6 @@ use pocketmine\world\generator\GeneratorManager;
 use pocketmine\world\generator\normal\Normal;
 use function array_keys;
 use function array_shift;
-use function asort;
 use function assert;
 use function count;
 use function implode;
@@ -55,6 +55,9 @@ use function trim;
 class WorldManager{
 	/** @var string */
 	private $dataPath;
+
+	/** @var WorldProviderManager */
+	private $providerManager;
 
 	/** @var World[] */
 	private $worlds = [];
@@ -72,9 +75,14 @@ class WorldManager{
 	/** @var int */
 	private $autoSaveTicker = 0;
 
-	public function __construct(Server $server, string $dataPath){
+	public function __construct(Server $server, string $dataPath, WorldProviderManager $providerManager){
 		$this->server = $server;
 		$this->dataPath = $dataPath;
+		$this->providerManager = $providerManager;
+	}
+
+	public function getProviderManager() : WorldProviderManager{
+		return $this->providerManager;
 	}
 
 	/**
@@ -133,7 +141,7 @@ class WorldManager{
 
 		$ev = new WorldUnloadEvent($world);
 		if($world === $this->defaultWorld and !$forceUnload){
-			$ev->setCancelled(true);
+			$ev->cancel();
 		}
 
 		$ev->call();
@@ -179,7 +187,7 @@ class WorldManager{
 
 		$path = $this->getWorldPath($name);
 
-		$providers = WorldProviderManager::getInstance()->getMatchingProviders($path);
+		$providers = $this->providerManager->getMatchingProviders($path);
 		if(count($providers) !== 1){
 			$this->server->getLogger()->error($this->server->getLanguage()->translateString("pocketmine.level.loadError", [
 				$name,
@@ -216,7 +224,7 @@ class WorldManager{
 			}
 			$this->server->getLogger()->notice("Upgrading world \"$name\" to new format. This may take a while.");
 
-			$converter = new FormatConverter($provider, WorldProviderManager::getInstance()->getDefault(), $this->server->getDataPath() . "world_conversion_backups", $this->server->getLogger());
+			$converter = new FormatConverter($provider, $this->providerManager->getDefault(), $this->server->getDataPath() . "world_conversion_backups", $this->server->getLogger());
 			$provider = $converter->execute();
 
 			$this->server->getLogger()->notice("Upgraded world \"$name\" to new format successfully. Backed up pre-conversion world at " . $converter->getBackupPath());
@@ -251,7 +259,7 @@ class WorldManager{
 
 		Utils::testValidInstance($generator, Generator::class);
 
-		$providerClass = WorldProviderManager::getInstance()->getDefault();
+		$providerClass = $this->providerManager->getDefault();
 
 		$path = $this->getWorldPath($name);
 		/** @var WritableWorldProvider $providerClass */
@@ -274,21 +282,7 @@ class WorldManager{
 			$centerX = $spawnLocation->getFloorX() >> 4;
 			$centerZ = $spawnLocation->getFloorZ() >> 4;
 
-			$order = [];
-
-			for($X = -3; $X <= 3; ++$X){
-				for($Z = -3; $Z <= 3; ++$Z){
-					$distance = $X ** 2 + $Z ** 2;
-					$chunkX = $X + $centerX;
-					$chunkZ = $Z + $centerZ;
-					$index = World::chunkHash($chunkX, $chunkZ);
-					$order[$index] = $distance;
-				}
-			}
-
-			asort($order);
-
-			foreach($order as $index => $distance){
+			foreach((new ChunkSelector())->selectChunks(3, $centerX, $centerZ) as $index){
 				World::getXZ($index, $chunkX, $chunkZ);
 				$world->populateChunk($chunkX, $chunkZ, true);
 			}
@@ -307,7 +301,7 @@ class WorldManager{
 		}
 		$path = $this->getWorldPath($name);
 		if(!($this->getWorldByName($name) instanceof World)){
-			return count(WorldProviderManager::getInstance()->getMatchingProviders($path)) > 0;
+			return count($this->providerManager->getMatchingProviders($path)) > 0;
 		}
 
 		return true;

@@ -27,6 +27,7 @@ use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Living;
+use pocketmine\entity\Location;
 use pocketmine\event\entity\EntityCombustByEntityEvent;
 use pocketmine\event\entity\EntityDamageByChildEntityEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
@@ -41,7 +42,6 @@ use pocketmine\nbt\tag\ByteTag;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\timings\Timings;
-use pocketmine\world\World;
 use function assert;
 use function atan2;
 use function ceil;
@@ -57,8 +57,8 @@ abstract class Projectile extends Entity{
 	/** @var Block|null */
 	protected $blockHit;
 
-	public function __construct(World $world, CompoundTag $nbt, ?Entity $shootingEntity = null){
-		parent::__construct($world, $nbt);
+	public function __construct(Location $location, ?Entity $shootingEntity, ?CompoundTag $nbt = null){
+		parent::__construct($location, $nbt);
 		if($shootingEntity !== null){
 			$this->setOwningEntity($shootingEntity);
 		}
@@ -82,20 +82,20 @@ abstract class Projectile extends Entity{
 			$blockId = null;
 			$blockData = null;
 
-			if($nbt->hasTag("tileX", IntTag::class) and $nbt->hasTag("tileY", IntTag::class) and $nbt->hasTag("tileZ", IntTag::class)){
-				$blockPos = new Vector3($nbt->getInt("tileX"), $nbt->getInt("tileY"), $nbt->getInt("tileZ"));
+			if(($tileXTag = $nbt->getTag("tileX")) instanceof IntTag and ($tileYTag = $nbt->getTag("tileY")) instanceof IntTag and ($tileZTag = $nbt->getTag("tileZ")) instanceof IntTag){
+				$blockPos = new Vector3($tileXTag->getValue(), $tileYTag->getValue(), $tileZTag->getValue());
 			}else{
 				break;
 			}
 
-			if($nbt->hasTag("blockId", IntTag::class)){
-				$blockId = $nbt->getInt("blockId");
+			if(($blockIdTag = $nbt->getTag("blockId")) instanceof IntTag){
+				$blockId = $blockIdTag->getValue();
 			}else{
 				break;
 			}
 
-			if($nbt->hasTag("blockData", ByteTag::class)){
-				$blockData = $nbt->getByte("blockData");
+			if(($blockDataTag = $nbt->getTag("blockData")) instanceof ByteTag){
+				$blockData = $blockDataTag->getValue();
 			}else{
 				break;
 			}
@@ -219,9 +219,12 @@ abstract class Projectile extends Entity{
 			}
 		}
 
-		$this->location->x = $end->x;
-		$this->location->y = $end->y;
-		$this->location->z = $end->z;
+		$this->location = Location::fromObject(
+			$end,
+			$this->location->world,
+			$this->location->yaw,
+			$this->location->pitch
+		);
 		$this->recalculateBoundingBox();
 
 		if($hitResult !== null){
@@ -247,7 +250,7 @@ abstract class Projectile extends Entity{
 			}
 
 			$this->isCollided = $this->onGround = true;
-			$this->motion->x = $this->motion->y = $this->motion->z = 0;
+			$this->motion = new Vector3(0, 0, 0);
 		}else{
 			$this->isCollided = $this->onGround = false;
 			$this->blockHit = null;

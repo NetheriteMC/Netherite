@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\protocol;
 
-use pocketmine\utils\Binary;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\utils\BinaryDataException;
 
 class PacketPool{
@@ -166,7 +166,6 @@ class PacketPool{
 		$this->registerPacket(new LevelSoundEventPacket());
 		$this->registerPacket(new LevelEventGenericPacket());
 		$this->registerPacket(new LecternUpdatePacket());
-		$this->registerPacket(new VideoStreamConnectPacket());
 		$this->registerPacket(new AddEntityPacket());
 		$this->registerPacket(new RemoveEntityPacket());
 		$this->registerPacket(new ClientCacheStatusPacket());
@@ -185,6 +184,18 @@ class PacketPool{
 		$this->registerPacket(new CompletedUsingItemPacket());
 		$this->registerPacket(new NetworkSettingsPacket());
 		$this->registerPacket(new PlayerAuthInputPacket());
+		$this->registerPacket(new CreativeContentPacket());
+		$this->registerPacket(new PlayerEnchantOptionsPacket());
+		$this->registerPacket(new ItemStackRequestPacket());
+		$this->registerPacket(new ItemStackResponsePacket());
+		$this->registerPacket(new PlayerArmorDamagePacket());
+		$this->registerPacket(new CodeBuilderPacket());
+		$this->registerPacket(new UpdatePlayerGameTypePacket());
+		$this->registerPacket(new EmoteListPacket());
+		$this->registerPacket(new PositionTrackingDBServerBroadcastPacket());
+		$this->registerPacket(new PositionTrackingDBClientRequestPacket());
+		$this->registerPacket(new DebugInfoPacket());
+		$this->registerPacket(new PacketViolationWarningPacket());
 	}
 
 	public function registerPacket(Packet $packet) : void{
@@ -199,9 +210,9 @@ class PacketPool{
 	 * @throws BinaryDataException
 	 */
 	public function getPacket(string $buffer) : Packet{
-		$offset = 0;
-		$pk = $this->getPacketById(Binary::readUnsignedVarInt($buffer, $offset) & DataPacket::PID_MASK);
-		$pk->getBinaryStream()->setBuffer($buffer, $offset);
+		$serializer = new PacketSerializer($buffer);
+		$pk = $this->getPacketById($serializer->getUnsignedVarInt() & DataPacket::PID_MASK);
+		$pk->setSerializer($serializer);
 
 		return $pk;
 	}

@@ -25,6 +25,7 @@ namespace pocketmine\block;
 
 use pocketmine\block\utils\BlockDataSerializer;
 use pocketmine\item\Item;
+use pocketmine\math\Axis;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -50,9 +51,9 @@ class Lever extends Flowable{
 
 	protected function writeStateToMeta() : int{
 		if($this->leverPos === self::BOTTOM){
-			$rotationMeta = Facing::axis($this->facing) === Facing::AXIS_Z ? 7 : 0;
+			$rotationMeta = Facing::axis($this->facing) === Axis::Z ? 7 : 0;
 		}elseif($this->leverPos === self::TOP){
-			$rotationMeta = Facing::axis($this->facing) === Facing::AXIS_Z ? 5 : 6;
+			$rotationMeta = Facing::axis($this->facing) === Axis::Z ? 5 : 6;
 		}else{
 			$rotationMeta = 6 - BlockDataSerializer::writeHorizontalFacing($this->facing);
 		}
@@ -84,7 +85,7 @@ class Lever extends Flowable{
 			return false;
 		}
 
-		if(Facing::axis($face) === Facing::AXIS_Y){
+		if(Facing::axis($face) === Axis::Y){
 			if($player !== null){
 				$this->facing = Facing::opposite($player->getHorizontalFacing());
 			}
@@ -107,14 +108,14 @@ class Lever extends Flowable{
 		}
 
 		if(!$this->getSide($face)->isSolid()){
-			$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+			$this->pos->getWorld()->useBreakOn($this->pos);
 		}
 	}
 
 	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
 		$this->powered = !$this->powered;
-		$this->pos->getWorldNonNull()->setBlock($this->pos, $this);
-		$this->pos->getWorldNonNull()->addSound(
+		$this->pos->getWorld()->setBlock($this->pos, $this);
+		$this->pos->getWorld()->addSound(
 			$this->pos->add(0.5, 0.5, 0.5),
 			$this->powered ? new RedstonePowerOnSound() : new RedstonePowerOffSound()
 		);

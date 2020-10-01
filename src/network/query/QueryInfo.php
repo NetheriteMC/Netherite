@@ -27,6 +27,7 @@ use pocketmine\player\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\Server;
 use pocketmine\utils\Binary;
+use pocketmine\utils\Utils;
 use function chr;
 use function count;
 use function str_replace;
@@ -76,7 +77,7 @@ final class QueryInfo{
 
 	public function __construct(Server $server){
 		$this->serverName = $server->getMotd();
-		$this->listPlugins = $server->getProperty("settings.query-plugins", true);
+		$this->listPlugins = (bool) $server->getConfigGroup()->getProperty("settings.query-plugins", true);
 		$this->plugins = $server->getPluginManager()->getPlugins();
 		$this->players = $server->getOnlinePlayers();
 
@@ -127,6 +128,7 @@ final class QueryInfo{
 	 * @param Plugin[] $plugins
 	 */
 	public function setPlugins(array $plugins) : void{
+		Utils::validateArrayValueType($plugins, function(Plugin $_) : void{});
 		$this->plugins = $plugins;
 		$this->destroyCache();
 	}
@@ -142,6 +144,7 @@ final class QueryInfo{
 	 * @param Player[] $players
 	 */
 	public function setPlayerList(array $players) : void{
+		Utils::validateArrayValueType($players, function(Player $_) : void{});
 		$this->players = $players;
 		$this->destroyCache();
 	}

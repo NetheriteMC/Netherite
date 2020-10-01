@@ -26,7 +26,7 @@ namespace pocketmine\network\mcpe\protocol;
 #include <rules/DataPacket.h>
 
 use pocketmine\math\Vector3;
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\InputMode;
 use pocketmine\network\mcpe\protocol\types\PlayMode;
 use function assert;
@@ -127,9 +127,9 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 		return $this->vrGazeDirection;
 	}
 
-	protected function decodePayload(NetworkBinaryStream $in) : void{
-		$this->yaw = $in->getLFloat();
+	protected function decodePayload(PacketSerializer $in) : void{
 		$this->pitch = $in->getLFloat();
+		$this->yaw = $in->getLFloat();
 		$this->position = $in->getVector3();
 		$this->moveVecX = $in->getLFloat();
 		$this->moveVecZ = $in->getLFloat();
@@ -142,9 +142,9 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 		}
 	}
 
-	protected function encodePayload(NetworkBinaryStream $out) : void{
-		$out->putLFloat($this->yaw);
+	protected function encodePayload(PacketSerializer $out) : void{
 		$out->putLFloat($this->pitch);
+		$out->putLFloat($this->yaw);
 		$out->putVector3($this->position);
 		$out->putLFloat($this->moveVecX);
 		$out->putLFloat($this->moveVecZ);

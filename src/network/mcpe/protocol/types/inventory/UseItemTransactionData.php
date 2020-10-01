@@ -25,7 +25,7 @@ namespace pocketmine\network\mcpe\protocol\types\inventory;
 
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\InventoryTransactionPacket;
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 
 class UseItemTransactionData extends TransactionData{
 	public const ACTION_CLICK_BLOCK = 0;
@@ -85,10 +85,11 @@ class UseItemTransactionData extends TransactionData{
 		return InventoryTransactionPacket::TYPE_USE_ITEM;
 	}
 
-	protected function decodeData(NetworkBinaryStream $stream) : void{
+	protected function decodeData(PacketSerializer $stream) : void{
 		$this->actionType = $stream->getUnsignedVarInt();
-		$this->blockPos = new Vector3();
-		$stream->getBlockPosition($this->blockPos->x, $this->blockPos->y, $this->blockPos->z);
+		$x = $y = $z = 0;
+		$stream->getBlockPosition($x, $y, $z);
+		$this->blockPos = new Vector3($x, $y, $z);
 		$this->face = $stream->getVarInt();
 		$this->hotbarSlot = $stream->getVarInt();
 		$this->itemInHand = $stream->getSlot();
@@ -97,7 +98,7 @@ class UseItemTransactionData extends TransactionData{
 		$this->blockRuntimeId = $stream->getUnsignedVarInt();
 	}
 
-	protected function encodeData(NetworkBinaryStream $stream) : void{
+	protected function encodeData(PacketSerializer $stream) : void{
 		$stream->putUnsignedVarInt($this->actionType);
 		$stream->putBlockPosition($this->blockPos->x, $this->blockPos->y, $this->blockPos->z);
 		$stream->putVarInt($this->face);

@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\block;
 
 use pocketmine\block\utils\BlockDataSerializer;
+use pocketmine\block\utils\HorizontalFacingTrait;
 use pocketmine\item\Item;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
@@ -33,9 +34,8 @@ use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\DoorSound;
 
 class Trapdoor extends Transparent{
+	use HorizontalFacingTrait;
 
-	/** @var int */
-	protected $facing = Facing::NORTH;
 	/** @var bool */
 	protected $open = false;
 	/** @var bool */
@@ -77,8 +77,8 @@ class Trapdoor extends Transparent{
 
 	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
 		$this->open = !$this->open;
-		$this->pos->getWorldNonNull()->setBlock($this->pos, $this);
-		$this->pos->getWorldNonNull()->addSound($this->pos, new DoorSound());
+		$this->pos->getWorld()->setBlock($this->pos, $this);
+		$this->pos->getWorld()->addSound($this->pos, new DoorSound());
 		return true;
 	}
 }

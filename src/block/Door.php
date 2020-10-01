@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\block;
 
 use pocketmine\block\utils\BlockDataSerializer;
+use pocketmine\block\utils\HorizontalFacingTrait;
 use pocketmine\item\Item;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
@@ -33,8 +34,8 @@ use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\DoorSound;
 
 class Door extends Transparent{
-	/** @var int */
-	protected $facing = Facing::NORTH;
+	use HorizontalFacingTrait;
+
 	/** @var bool */
 	protected $top = false;
 	/** @var bool */
@@ -99,7 +100,7 @@ class Door extends Transparent{
 
 	public function onNearbyBlockChange() : void{
 		if($this->getSide(Facing::DOWN)->getId() === BlockLegacyIds::AIR){ //Replace with common break method
-			$this->pos->getWorldNonNull()->useBreakOn($this->pos); //this will delete both halves if they exist
+			$this->pos->getWorld()->useBreakOn($this->pos); //this will delete both halves if they exist
 		}
 	}
 
@@ -138,11 +139,11 @@ class Door extends Transparent{
 		$other = $this->getSide($this->top ? Facing::DOWN : Facing::UP);
 		if($other instanceof Door and $other->isSameType($this)){
 			$other->open = $this->open;
-			$this->pos->getWorldNonNull()->setBlock($other->pos, $other);
+			$this->pos->getWorld()->setBlock($other->pos, $other);
 		}
 
-		$this->pos->getWorldNonNull()->setBlock($this->pos, $this);
-		$this->pos->getWorldNonNull()->addSound($this->pos, new DoorSound());
+		$this->pos->getWorld()->setBlock($this->pos, $this);
+		$this->pos->getWorld()->addSound($this->pos, new DoorSound());
 
 		return true;
 	}

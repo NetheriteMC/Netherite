@@ -28,23 +28,20 @@ namespace pocketmine\block;
 
 use pocketmine\block\tile\Spawnable;
 use pocketmine\block\tile\Tile;
-use pocketmine\block\tile\TileFactory;
 use pocketmine\block\utils\InvalidBlockStateException;
 use pocketmine\entity\Entity;
 use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
+use pocketmine\math\Axis;
 use pocketmine\math\AxisAlignedBB;
-use pocketmine\math\Facing;
 use pocketmine\math\RayTraceResult;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 use pocketmine\world\Position;
 use pocketmine\world\World;
-use function array_merge;
 use function assert;
 use function count;
 use function dechex;
@@ -81,7 +78,7 @@ class Block{
 	}
 
 	public function __clone(){
-		$this->pos = Position::fromObject($this->pos, $this->pos->getWorld());
+		$this->pos = clone $this->pos;
 	}
 
 	public function getIdInfo() : BlockIdentifier{
@@ -105,13 +102,6 @@ class Block{
 
 	public function asItem() : Item{
 		return ItemFactory::getInstance()->get($this->idInfo->getItemId(), $this->idInfo->getVariant());
-	}
-
-	/**
-	 * @internal
-	 */
-	public function getRuntimeId() : int{
-		return RuntimeBlockMapping::getInstance()->toRuntimeId($this->getId(), $this->getMeta());
 	}
 
 	public function getMeta() : int{
@@ -150,10 +140,10 @@ class Block{
 	}
 
 	public function writeStateToWorld() : void{
-		$this->pos->getWorldNonNull()->getChunkAtPosition($this->pos)->setFullBlock($this->pos->x & 0xf, $this->pos->y, $this->pos->z & 0xf, $this->getFullId());
+		$this->pos->getWorld()->getChunkAtPosition($this->pos)->setFullBlock($this->pos->x & 0xf, $this->pos->y, $this->pos->z & 0xf, $this->getFullId());
 
 		$tileType = $this->idInfo->getTileClass();
-		$oldTile = $this->pos->getWorldNonNull()->getTile($this->pos);
+		$oldTile = $this->pos->getWorld()->getTile($this->pos);
 		if($oldTile !== null){
 			if($tileType === null or !($oldTile instanceof $tileType)){
 				$oldTile->close();
@@ -163,7 +153,12 @@ class Block{
 			}
 		}
 		if($oldTile === null and $tileType !== null){
-			$this->pos->getWorldNonNull()->addTile(TileFactory::getInstance()->create($tileType, $this->pos->getWorldNonNull(), $this->pos->asVector3()));
+			/**
+			 * @var Tile $tile
+			 * @see Tile::__construct()
+			 */
+			$tile = new $tileType($this->pos->getWorld(), $this->pos->asVector3());
+			$this->pos->getWorld()->addTile($tile);
 		}
 	}
 
@@ -222,10 +217,10 @@ class Block{
 	 * Do the actions needed so the block is broken with the Item
 	 */
 	public function onBreak(Item $item, ?Player $player = null) : bool{
-		if(($t = $this->pos->getWorldNonNull()->getTile($this->pos)) !== null){
+		if(($t = $this->pos->getWorld()->getTile($this->pos)) !== null){
 			$t->onBlockDestroyed();
 		}
-		$this->pos->getWorldNonNull()->setBlock($this->pos, VanillaBlocks::AIR());
+		$this->pos->getWorld()->setBlock($this->pos, VanillaBlocks::AIR());
 		return true;
 	}
 
@@ -297,14 +292,14 @@ class Block{
 	}
 
 	/**
-	 * Returns whether this block will diffuse sky light passing through it vertically.
-	 * Diffusion means that full-strength sky light passing through this block will not be reduced, but will start being filtered below the block.
-	 * Examples of this behaviour include leaves and cobwebs.
+	 * Returns whether this block blocks direct sky light from passing through it. This is independent from the light
+	 * filter value, which is used during propagation.
 	 *
-	 * Light-diffusing blocks are included by the heightmap.
+	 * In most cases, this is the same as isTransparent(); however, some special cases exist such as leaves and cobwebs,
+	 * which don't have any additional effect on light propagation, but don't allow direct sky light to pass through.
 	 */
-	public function diffusesSkyLight() : bool{
-		return false;
+	public function blocksDirectSkyLight() : bool{
+		return $this->getLightFilter() > 0;
 	}
 
 	public function isTransparent() : bool{
@@ -333,8 +328,8 @@ class Block{
 		return false;
 	}
 
-	public function addVelocityToEntity(Entity $entity, Vector3 $vector) : void{
-
+	public function addVelocityToEntity(Entity $entity) : ?Vector3{
+		return null;
 	}
 
 	final public function getPos() : Position{
@@ -414,7 +409,7 @@ class Block{
 	public function getPickedItem(bool $addUserData = false) : Item{
 		$item = $this->asItem();
 		if($addUserData){
-			$tile = $this->pos->getWorldNonNull()->getTile($this->pos);
+			$tile = $this->pos->getWorld()->getTile($this->pos);
 			if($tile instanceof Tile){
 				$nbt = $tile->getCleanedNBT();
 				if($nbt instanceof CompoundTag){
@@ -476,7 +471,7 @@ class Block{
 	 */
 	public function getSide(int $side, int $step = 1){
 		if($this->pos->isValid()){
-			return $this->pos->getWorldNonNull()->getBlock($this->pos->getSide($side, $step));
+			return $this->pos->getWorld()->getBlock($this->pos->getSide($side, $step));
 		}
 
 		throw new \InvalidStateException("Block does not have a valid world");
@@ -485,30 +480,27 @@ class Block{
 	/**
 	 * Returns the 4 blocks on the horizontal axes around the block (north, south, east, west)
 	 *
-	 * @return Block[]
+	 * @return Block[]|\Generator
+	 * @phpstan-return \Generator<int, Block, void, void>
 	 */
-	public function getHorizontalSides() : array{
-		return [
-			$this->getSide(Facing::NORTH),
-			$this->getSide(Facing::SOUTH),
-			$this->getSide(Facing::WEST),
-			$this->getSide(Facing::EAST)
-		];
+	public function getHorizontalSides() : \Generator{
+		$world = $this->pos->getWorld();
+		foreach($this->pos->sidesAroundAxis(Axis::Y) as $vector3){
+			yield $world->getBlock($vector3);
+		}
 	}
 
 	/**
 	 * Returns the six blocks around this block.
 	 *
-	 * @return Block[]
+	 * @return Block[]|\Generator
+	 * @phpstan-return \Generator<int, Block, void, void>
 	 */
-	public function getAllSides() : array{
-		return array_merge(
-			[
-				$this->getSide(Facing::DOWN),
-				$this->getSide(Facing::UP)
-			],
-			$this->getHorizontalSides()
-		);
+	public function getAllSides() : \Generator{
+		$world = $this->pos->getWorld();
+		foreach($this->pos->sides() as $vector3){
+			yield $world->getBlock($vector3);
+		}
 	}
 
 	/**
@@ -544,9 +536,12 @@ class Block{
 	/**
 	 * Called when an entity's bounding box clips inside this block's cell. Note that the entity may not be intersecting
 	 * with the collision box or bounding box.
+	 *
+	 * @return bool Whether the block is still the same after the intersection. If it changed (e.g. due to an explosive
+	 * being ignited), this should return false.
 	 */
-	public function onEntityInside(Entity $entity) : void{
-
+	public function onEntityInside(Entity $entity) : bool{
+		return true;
 	}
 
 	/**
@@ -555,12 +550,22 @@ class Block{
 	final public function getCollisionBoxes() : array{
 		if($this->collisionBoxes === null){
 			$this->collisionBoxes = $this->recalculateCollisionBoxes();
+			$extraOffset = $this->getPosOffset();
+			$offset = $extraOffset !== null ? $this->pos->addVector($extraOffset) : $this->pos;
 			foreach($this->collisionBoxes as $bb){
-				$bb->offset($this->pos->x, $this->pos->y, $this->pos->z);
+				$bb->offset($offset->x, $offset->y, $offset->z);
 			}
 		}
 
 		return $this->collisionBoxes;
+	}
+
+	/**
+	 * Returns an additional fractional vector to shift the block's effective position by based on the current position.
+	 * Used to randomize position of things like bamboo canes and tall grass.
+	 */
+	public function getPosOffset() : ?Vector3{
+		return null;
 	}
 
 	/**

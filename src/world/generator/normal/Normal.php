@@ -27,6 +27,7 @@ use pocketmine\block\VanillaBlocks;
 use pocketmine\world\biome\Biome;
 use pocketmine\world\ChunkManager;
 use pocketmine\world\generator\biome\BiomeSelector;
+use pocketmine\world\generator\Gaussian;
 use pocketmine\world\generator\Generator;
 use pocketmine\world\generator\InvalidGeneratorOptionsException;
 use pocketmine\world\generator\noise\Simplex;
@@ -35,7 +36,6 @@ use pocketmine\world\generator\populator\GroundCover;
 use pocketmine\world\generator\populator\Ore;
 use pocketmine\world\generator\populator\Populator;
 use pocketmine\world\World;
-use function exp;
 
 class Normal extends Generator{
 
@@ -52,10 +52,8 @@ class Normal extends Generator{
 	/** @var BiomeSelector */
 	private $selector;
 
-	/** @var float[][]|null */
-	private static $GAUSSIAN_KERNEL = null;
-	/** @var int */
-	private static $SMOOTH_SIZE = 2;
+	/** @var Gaussian */
+	private $gaussian;
 
 	/**
 	 * @param mixed[] $options
@@ -65,9 +63,8 @@ class Normal extends Generator{
 	 */
 	public function __construct(ChunkManager $world, int $seed, array $options = []){
 		parent::__construct($world, $seed, $options);
-		if(self::$GAUSSIAN_KERNEL === null){
-			self::generateKernel();
-		}
+
+		$this->gaussian = new Gaussian(2);
 
 		$this->noiseBase = new Simplex($this->random, 4, 1 / 4, 1 / 32);
 		$this->random->setSeed($this->seed);
@@ -119,34 +116,18 @@ class Normal extends Generator{
 		$this->generationPopulators[] = $cover;
 
 		$ores = new Ore();
+		$stone = VanillaBlocks::STONE();
 		$ores->setOreTypes([
-			new OreType(VanillaBlocks::COAL_ORE(), 20, 16, 0, 128),
-			new OreType(VanillaBlocks::IRON_ORE(), 20, 8, 0, 64),
-			new OreType(VanillaBlocks::REDSTONE_ORE(), 8, 7, 0, 16),
-			new OreType(VanillaBlocks::LAPIS_LAZULI_ORE(), 1, 6, 0, 32),
-			new OreType(VanillaBlocks::GOLD_ORE(), 2, 8, 0, 32),
-			new OreType(VanillaBlocks::DIAMOND_ORE(), 1, 7, 0, 16),
-			new OreType(VanillaBlocks::DIRT(), 20, 32, 0, 128),
-			new OreType(VanillaBlocks::GRAVEL(), 10, 16, 0, 128)
+			new OreType(VanillaBlocks::COAL_ORE(), $stone, 20, 16, 0, 128),
+			new OreType(VanillaBlocks::IRON_ORE(), $stone, 20, 8, 0, 64),
+			new OreType(VanillaBlocks::REDSTONE_ORE(), $stone, 8, 7, 0, 16),
+			new OreType(VanillaBlocks::LAPIS_LAZULI_ORE(), $stone, 1, 6, 0, 32),
+			new OreType(VanillaBlocks::GOLD_ORE(), $stone, 2, 8, 0, 32),
+			new OreType(VanillaBlocks::DIAMOND_ORE(), $stone, 1, 7, 0, 16),
+			new OreType(VanillaBlocks::DIRT(), $stone, 20, 32, 0, 128),
+			new OreType(VanillaBlocks::GRAVEL(), $stone, 10, 16, 0, 128)
 		]);
 		$this->populators[] = $ores;
-	}
-
-	private static function generateKernel() : void{
-		self::$GAUSSIAN_KERNEL = [];
-
-		$bellSize = 1 / self::$SMOOTH_SIZE;
-		$bellHeight = 2 * self::$SMOOTH_SIZE;
-
-		for($sx = -self::$SMOOTH_SIZE; $sx <= self::$SMOOTH_SIZE; ++$sx){
-			self::$GAUSSIAN_KERNEL[$sx + self::$SMOOTH_SIZE] = [];
-
-			for($sz = -self::$SMOOTH_SIZE; $sz <= self::$SMOOTH_SIZE; ++$sz){
-				$bx = $bellSize * $sx;
-				$bz = $bellSize * $sz;
-				self::$GAUSSIAN_KERNEL[$sx + self::$SMOOTH_SIZE][$sz + self::$SMOOTH_SIZE] = $bellHeight * exp(-($bx * $bx + $bz * $bz) / 2);
-			}
-		}
 	}
 
 	private function pickBiome(int $x, int $z) : Biome{
@@ -186,10 +167,10 @@ class Normal extends Generator{
 				$biome = $this->pickBiome($chunkX * 16 + $x, $chunkZ * 16 + $z);
 				$chunk->setBiomeId($x, $z, $biome->getId());
 
-				for($sx = -self::$SMOOTH_SIZE; $sx <= self::$SMOOTH_SIZE; ++$sx){
-					for($sz = -self::$SMOOTH_SIZE; $sz <= self::$SMOOTH_SIZE; ++$sz){
+				for($sx = -$this->gaussian->smoothSize; $sx <= $this->gaussian->smoothSize; ++$sx){
+					for($sz = -$this->gaussian->smoothSize; $sz <= $this->gaussian->smoothSize; ++$sz){
 
-						$weight = self::$GAUSSIAN_KERNEL[$sx + self::$SMOOTH_SIZE][$sz + self::$SMOOTH_SIZE];
+						$weight = $this->gaussian->kernel[$sx + $this->gaussian->smoothSize][$sz + $this->gaussian->smoothSize];
 
 						if($sx === 0 and $sz === 0){
 							$adjacent = $biome;

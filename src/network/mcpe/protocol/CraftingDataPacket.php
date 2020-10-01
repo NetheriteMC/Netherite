@@ -25,11 +25,11 @@ namespace pocketmine\network\mcpe\protocol;
 
 #include <rules/DataPacket.h>
 
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
-use pocketmine\network\mcpe\protocol\types\PotionContainerChangeRecipe;
-use pocketmine\network\mcpe\protocol\types\PotionTypeRecipe;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\recipe\FurnaceRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\MultiRecipe;
+use pocketmine\network\mcpe\protocol\types\recipe\PotionContainerChangeRecipe;
+use pocketmine\network\mcpe\protocol\types\recipe\PotionTypeRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\RecipeWithTypeId;
 use pocketmine\network\mcpe\protocol\types\recipe\ShapedRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\ShapelessRecipe;
@@ -56,7 +56,7 @@ class CraftingDataPacket extends DataPacket implements ClientboundPacket{
 	/** @var bool */
 	public $cleanRecipes = false;
 
-	protected function decodePayload(NetworkBinaryStream $in) : void{
+	protected function decodePayload(PacketSerializer $in) : void{
 		$recipeCount = $in->getUnsignedVarInt();
 		for($i = 0; $i < $recipeCount; ++$i){
 			$recipeType = $in->getVarInt();
@@ -83,10 +83,13 @@ class CraftingDataPacket extends DataPacket implements ClientboundPacket{
 			}
 		}
 		for($i = 0, $count = $in->getUnsignedVarInt(); $i < $count; ++$i){
-			$input = $in->getVarInt();
-			$ingredient = $in->getVarInt();
-			$output = $in->getVarInt();
-			$this->potionTypeRecipes[] = new PotionTypeRecipe($input, $ingredient, $output);
+			$inputId = $in->getVarInt();
+			$inputMeta = $in->getVarInt();
+			$ingredientId = $in->getVarInt();
+			$ingredientMeta = $in->getVarInt();
+			$outputId = $in->getVarInt();
+			$outputMeta = $in->getVarInt();
+			$this->potionTypeRecipes[] = new PotionTypeRecipe($inputId, $inputMeta, $ingredientId, $ingredientMeta, $outputId, $outputMeta);
 		}
 		for($i = 0, $count = $in->getUnsignedVarInt(); $i < $count; ++$i){
 			$input = $in->getVarInt();
@@ -97,7 +100,7 @@ class CraftingDataPacket extends DataPacket implements ClientboundPacket{
 		$this->cleanRecipes = $in->getBool();
 	}
 
-	protected function encodePayload(NetworkBinaryStream $out) : void{
+	protected function encodePayload(PacketSerializer $out) : void{
 		$out->putUnsignedVarInt(count($this->entries));
 		foreach($this->entries as $d){
 			$out->putVarInt($d->getTypeId());
@@ -105,9 +108,12 @@ class CraftingDataPacket extends DataPacket implements ClientboundPacket{
 		}
 		$out->putUnsignedVarInt(count($this->potionTypeRecipes));
 		foreach($this->potionTypeRecipes as $recipe){
-			$out->putVarInt($recipe->getInputPotionType());
+			$out->putVarInt($recipe->getInputItemId());
+			$out->putVarInt($recipe->getInputItemMeta());
 			$out->putVarInt($recipe->getIngredientItemId());
-			$out->putVarInt($recipe->getOutputPotionType());
+			$out->putVarInt($recipe->getIngredientItemMeta());
+			$out->putVarInt($recipe->getOutputItemId());
+			$out->putVarInt($recipe->getOutputItemMeta());
 		}
 		$out->putUnsignedVarInt(count($this->potionContainerRecipes));
 		foreach($this->potionContainerRecipes as $recipe){

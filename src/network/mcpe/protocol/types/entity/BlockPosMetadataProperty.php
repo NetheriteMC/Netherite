@@ -24,7 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\network\mcpe\protocol\types\entity;
 
 use pocketmine\math\Vector3;
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 
 final class BlockPosMetadataProperty implements MetadataProperty{
 
@@ -43,13 +43,13 @@ final class BlockPosMetadataProperty implements MetadataProperty{
 		return EntityMetadataTypes::POS;
 	}
 
-	public static function read(NetworkBinaryStream $in) : self{
-		$vec = new Vector3(0, 0, 0);
-		$in->getSignedBlockPosition($vec->x, $vec->y, $vec->z);
-		return new self($vec);
+	public static function read(PacketSerializer $in) : self{
+		$x = $y = $z = 0;
+		$in->getSignedBlockPosition($x, $y, $z);
+		return new self(new Vector3($x, $y, $z));
 	}
 
-	public function write(NetworkBinaryStream $out) : void{
+	public function write(PacketSerializer $out) : void{
 		$out->putSignedBlockPosition($this->value->x, $this->value->y, $this->value->z);
 	}
 

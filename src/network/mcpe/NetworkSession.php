@@ -42,7 +42,7 @@ use pocketmine\network\mcpe\compression\DecompressionException;
 use pocketmine\network\mcpe\convert\SkinAdapterSingleton;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\encryption\DecryptionException;
-use pocketmine\network\mcpe\encryption\NetworkCipher;
+use pocketmine\network\mcpe\encryption\EncryptionContext;
 use pocketmine\network\mcpe\encryption\PrepareEncryptionTask;
 use pocketmine\network\mcpe\handler\DeathPacketHandler;
 use pocketmine\network\mcpe\handler\HandshakePacketHandler;
@@ -85,6 +85,7 @@ use pocketmine\network\mcpe\protocol\TransferPacket;
 use pocketmine\network\mcpe\protocol\types\command\CommandData;
 use pocketmine\network\mcpe\protocol\types\command\CommandEnum;
 use pocketmine\network\mcpe\protocol\types\command\CommandParameter;
+use pocketmine\network\mcpe\protocol\types\DimensionIds;
 use pocketmine\network\mcpe\protocol\types\entity\Attribute as NetworkAttribute;
 use pocketmine\network\mcpe\protocol\types\entity\MetadataProperty;
 use pocketmine\network\mcpe\protocol\types\inventory\ContainerIds;
@@ -97,12 +98,11 @@ use pocketmine\player\Player;
 use pocketmine\player\PlayerInfo;
 use pocketmine\Server;
 use pocketmine\timings\Timings;
-use pocketmine\utils\BinaryDataException;
 use pocketmine\utils\TextFormat;
 use pocketmine\utils\Utils;
 use pocketmine\world\Position;
 use function array_map;
-use function assert;
+use function array_values;
 use function base64_encode;
 use function bin2hex;
 use function count;
@@ -148,13 +148,16 @@ class NetworkSession{
 	/** @var int */
 	private $connectTime;
 
-	/** @var NetworkCipher */
+	/** @var EncryptionContext */
 	private $cipher;
 
-	/** @var PacketBatch|null */
-	private $sendBuffer;
+	/** @var Packet[] */
+	private $sendBuffer = [];
 
-	/** @var \SplQueue|CompressBatchPromise[] */
+	/**
+	 * @var \SplQueue|CompressBatchPromise[]
+	 * @phpstan-var \SplQueue<CompressBatchPromise>
+	 */
 	private $compressedQueue;
 	/** @var Compressor */
 	private $compressor;
@@ -221,11 +224,15 @@ class NetworkSession{
 		$ev->call();
 		$class = $ev->getPlayerClass();
 
+		//TODO: make this async
+		//TODO: this really has no business being in NetworkSession at all - what about allowing it to be provided by PlayerCreationEvent?
+		$namedtag = $this->server->getOfflinePlayerData($this->info->getUsername());
+
 		/**
 		 * @var Player $player
 		 * @see Player::__construct()
 		 */
-		$this->player = new $class($this->server, $this, $this->info, $this->authenticated);
+		$this->player = new $class($this->server, $this, $this->info, $this->authenticated, $namedtag);
 
 		$this->invManager = new InventoryManager($this->player, $this);
 
@@ -324,24 +331,18 @@ class NetworkSession{
 			Timings::$playerNetworkReceiveDecompressTimer->stopTiming();
 		}
 
-		$count = 0;
-		while(!$stream->feof() and $this->connected){
-			if($count++ >= 500){
-				throw new BadPacketException("Too many packets in a single batch");
+		try{
+			foreach($stream->getPackets($this->packetPool, 500) as $packet){
+				try{
+					$this->handleDataPacket($packet);
+				}catch(BadPacketException $e){
+					$this->logger->debug($packet->getName() . ": " . base64_encode($packet->getSerializer()->getBuffer()));
+					throw BadPacketException::wrap($e, "Error processing " . $packet->getName());
+				}
 			}
-			try{
-				$pk = $stream->getPacket($this->packetPool);
-			}catch(BinaryDataException $e){
-				$this->logger->debug("Packet batch: " . base64_encode($stream->getBuffer()));
-				throw BadPacketException::wrap($e, "Packet batch decode error");
-			}
-
-			try{
-				$this->handleDataPacket($pk);
-			}catch(BadPacketException $e){
-				$this->logger->debug($pk->getName() . ": " . base64_encode($pk->getBinaryStream()->getBuffer()));
-				throw BadPacketException::wrap($e, "Error processing " . $pk->getName());
-			}
+		}catch(PacketDecodeException $e){
+			$this->logger->logException($e);
+			throw BadPacketException::wrap($e, "Packet batch decode error");
 		}
 	}
 
@@ -351,7 +352,7 @@ class NetworkSession{
 	public function handleDataPacket(Packet $packet) : void{
 		if(!($packet instanceof ServerboundPacket)){
 			if($packet instanceof GarbageServerboundPacket){
-				$this->logger->debug("Garbage serverbound " . $packet->getName() . ": " . base64_encode($packet->getBinaryStream()->getBuffer()));
+				$this->logger->debug("Garbage serverbound " . $packet->getName() . ": " . base64_encode($packet->getSerializer()->getBuffer()));
 				return;
 			}
 			throw new BadPacketException("Unexpected non-serverbound packet");
@@ -366,7 +367,7 @@ class NetworkSession{
 			}catch(PacketDecodeException $e){
 				throw BadPacketException::wrap($e);
 			}
-			$stream = $packet->getBinaryStream();
+			$stream = $packet->getSerializer();
 			if(!$stream->feof()){
 				$remains = substr($stream->getBuffer(), $stream->getOffset());
 				$this->logger->debug("Still " . strlen($remains) . " bytes unread in " . $packet->getName() . ": " . bin2hex($remains));
@@ -415,10 +416,7 @@ class NetworkSession{
 		$timings = Timings::getSendDataPacketTimings($packet);
 		$timings->startTiming();
 		try{
-			if($this->sendBuffer === null){
-				$this->sendBuffer = new PacketBatch();
-			}
-			$this->sendBuffer->putPacket($packet);
+			$this->sendBuffer[] = $packet;
 			$this->manager->scheduleUpdate($this); //schedule flush at end of tick
 		}finally{
 			$timings->stopTiming();
@@ -426,9 +424,9 @@ class NetworkSession{
 	}
 
 	private function flushSendBuffer(bool $immediate = false) : void{
-		if($this->sendBuffer !== null){
-			$promise = $this->server->prepareBatch($this->sendBuffer, $this->compressor, $immediate);
-			$this->sendBuffer = null;
+		if(count($this->sendBuffer) > 0){
+			$promise = $this->server->prepareBatch(PacketBatch::fromPackets(...$this->sendBuffer), $this->compressor, $immediate);
+			$this->sendBuffer = [];
 			$this->queueCompressed($promise, $immediate);
 		}
 	}
@@ -585,14 +583,14 @@ class NetworkSession{
 		$this->logger->debug("Xbox Live authenticated: " . ($this->authenticated ? "YES" : "NO"));
 
 		if($this->manager->kickDuplicates($this)){
-			if(NetworkCipher::$ENABLED){
+			if(EncryptionContext::$ENABLED){
 				$this->server->getAsyncPool()->submitTask(new PrepareEncryptionTask($clientPubKey, function(string $encryptionKey, string $handshakeJwt) : void{
 					if(!$this->connected){
 						return;
 					}
 					$this->sendDataPacket(ServerToClientHandshakePacket::create($handshakeJwt), true); //make sure this gets sent before encryption is enabled
 
-					$this->cipher = new NetworkCipher($encryptionKey);
+					$this->cipher = new EncryptionContext($encryptionKey);
 
 					$this->setHandler(new HandshakePacketHandler(function() : void{
 						$this->onLoginSuccess();
@@ -641,7 +639,9 @@ class NetworkSession{
 	}
 
 	public function onDeath() : void{
-		$this->setHandler(new DeathPacketHandler($this->player, $this));
+		if($this->handler instanceof InGamePacketHandler){ //TODO: this is a bad fix for pre-spawn death, this shouldn't be reachable at all at this stage :(
+			$this->setHandler(new DeathPacketHandler($this->player, $this));
+		}
 	}
 
 	public function onRespawn() : void{
@@ -654,19 +654,22 @@ class NetworkSession{
 	}
 
 	public function syncMovement(Vector3 $pos, ?float $yaw = null, ?float $pitch = null, int $mode = MovePlayerPacket::MODE_NORMAL) : void{
-		$location = $this->player->getLocation();
-		$yaw = $yaw ?? $location->getYaw();
-		$pitch = $pitch ?? $location->getPitch();
+		if($this->player !== null){
+			$location = $this->player->getLocation();
+			$yaw = $yaw ?? $location->getYaw();
+			$pitch = $pitch ?? $location->getPitch();
 
-		$pk = new MovePlayerPacket();
-		$pk->entityRuntimeId = $this->player->getId();
-		$pk->position = $this->player->getOffsetPosition($pos);
-		$pk->pitch = $pitch;
-		$pk->headYaw = $yaw;
-		$pk->yaw = $yaw;
-		$pk->mode = $mode;
+			$pk = new MovePlayerPacket();
+			$pk->entityRuntimeId = $this->player->getId();
+			$pk->position = $this->player->getOffsetPosition($pos);
+			$pk->pitch = $pitch;
+			$pk->headYaw = $yaw;
+			$pk->yaw = $yaw;
+			$pk->mode = $mode;
+			$pk->onGround = $this->player->onGround;
 
-		$this->sendDataPacket($pk);
+			$this->sendDataPacket($pk);
+		}
 	}
 
 	public function syncViewAreaRadius(int $distance) : void{
@@ -678,11 +681,12 @@ class NetworkSession{
 	}
 
 	public function syncPlayerSpawnPoint(Position $newSpawn) : void{
-		$this->sendDataPacket(SetSpawnPositionPacket::playerSpawn($newSpawn->getFloorX(), $newSpawn->getFloorY(), $newSpawn->getFloorZ(), false)); //TODO: spawn forced
+		[$x, $y, $z] = [$newSpawn->getFloorX(), $newSpawn->getFloorY(), $newSpawn->getFloorZ()];
+		$this->sendDataPacket(SetSpawnPositionPacket::playerSpawn($x, $y, $z, DimensionIds::OVERWORLD, $x, $y, $z));
 	}
 
 	public function syncGameMode(GameMode $mode, bool $isRollback = false) : void{
-		$this->sendDataPacket(SetPlayerGameTypePacket::create(TypeConverter::getInstance()->getClientFriendlyGamemode($mode)));
+		$this->sendDataPacket(SetPlayerGameTypePacket::create(TypeConverter::getInstance()->coreGameModeToProtocol($mode)));
 		$this->syncAdventureSettings($this->player);
 		if(!$isRollback){
 			$this->invManager->syncCreative();
@@ -757,12 +761,12 @@ class NetworkSession{
 					//work around a client bug which makes the original name not show when aliases are used
 					$aliases[] = $lname;
 				}
-				$aliasObj = new CommandEnum(ucfirst($command->getName()) . "Aliases", $aliases);
+				$aliasObj = new CommandEnum(ucfirst($command->getName()) . "Aliases", array_values($aliases));
 			}
 
 			$data = new CommandData(
 				$lname, //TODO: commands containing uppercase letters in the name crash 1.9.0 client
-				$this->server->getLanguage()->translateString($command->getDescription()),
+				$this->player->getLanguage()->translateString($command->getDescription()),
 				0,
 				0,
 				$aliasObj,
@@ -786,6 +790,13 @@ class NetworkSession{
 	 */
 	public function onTranslatedChatMessage(string $key, array $parameters) : void{
 		$this->sendDataPacket(TextPacket::translation($key, $parameters));
+	}
+
+	/**
+	 * @param string[] $parameters
+	 */
+	public function onJukeboxPopup(string $key, array $parameters) : void{
+		$this->sendDataPacket(TextPacket::jukeboxPopup($key, $parameters));
 	}
 
 	public function onPopup(string $message) : void{
@@ -812,7 +823,7 @@ class NetworkSession{
 	public function startUsingChunk(int $chunkX, int $chunkZ, \Closure $onCompletion) : void{
 		Utils::validateCallableSignature(function(int $chunkX, int $chunkZ) : void{}, $onCompletion);
 
-		$world = $this->player->getLocation()->getWorldNonNull();
+		$world = $this->player->getLocation()->getWorld();
 		ChunkCache::getInstance($world, $this->compressor)->request($chunkX, $chunkZ)->onResolve(
 
 			//this callback may be called synchronously or asynchronously, depending on whether the promise is resolved yet
@@ -820,7 +831,7 @@ class NetworkSession{
 				if(!$this->isConnected()){
 					return;
 				}
-				$currentWorld = $this->player->getLocation()->getWorldNonNull();
+				$currentWorld = $this->player->getLocation()->getWorld();
 				if($world !== $currentWorld or !$this->player->isUsingChunk($chunkX, $chunkZ)){
 					$this->logger->debug("Tried to send no-longer-active chunk $chunkX $chunkZ in world " . $world->getFolderName());
 					return;
@@ -937,9 +948,7 @@ class NetworkSession{
 			return true; //keep ticking until timeout
 		}
 
-		if($this->sendBuffer !== null){
-			$this->flushSendBuffer();
-		}
+		$this->flushSendBuffer();
 
 		return false;
 	}

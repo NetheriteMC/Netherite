@@ -25,6 +25,7 @@ namespace pocketmine\block;
 
 use pocketmine\entity\Entity;
 use pocketmine\item\Item;
+use pocketmine\math\Axis;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -80,8 +81,9 @@ class Vine extends Flowable{
 		return true;
 	}
 
-	public function onEntityInside(Entity $entity) : void{
+	public function onEntityInside(Entity $entity) : bool{
 		$entity->resetFallDistance();
+		return true;
 	}
 
 	protected function recalculateCollisionBoxes() : array{
@@ -89,7 +91,7 @@ class Vine extends Flowable{
 	}
 
 	public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
-		if(!$blockClicked->isSolid() or Facing::axis($face) === Facing::AXIS_Y){
+		if(!$blockClicked->isSolid() or Facing::axis($face) === Axis::Y){
 			return false;
 		}
 
@@ -115,9 +117,9 @@ class Vine extends Flowable{
 
 		if($changed){
 			if(count($this->faces) === 0){
-				$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+				$this->pos->getWorld()->useBreakOn($this->pos);
 			}else{
-				$this->pos->getWorldNonNull()->setBlock($this->pos, $this);
+				$this->pos->getWorld()->setBlock($this->pos, $this);
 			}
 		}
 	}

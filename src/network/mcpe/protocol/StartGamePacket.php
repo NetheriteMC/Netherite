@@ -27,13 +27,14 @@ namespace pocketmine\network\mcpe\protocol;
 
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\ListTag;
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\CacheableNbt;
 use pocketmine\network\mcpe\protocol\types\EducationEditionOffer;
-use pocketmine\network\mcpe\protocol\types\GameRuleType;
+use pocketmine\network\mcpe\protocol\types\GameRule;
 use pocketmine\network\mcpe\protocol\types\GeneratorType;
 use pocketmine\network\mcpe\protocol\types\MultiplayerGameVisibility;
 use pocketmine\network\mcpe\protocol\types\PlayerPermissions;
+use pocketmine\network\mcpe\protocol\types\SpawnSettings;
 use function count;
 
 class StartGamePacket extends DataPacket implements ClientboundPacket{
@@ -56,8 +57,8 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 
 	/** @var int */
 	public $seed;
-	/** @var int */
-	public $dimension;
+	/** @var SpawnSettings */
+	public $spawnSettings;
 	/** @var int */
 	public $generator = GeneratorType::OVERWORLD;
 	/** @var int */
@@ -78,6 +79,8 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 	public $eduEditionOffer = EducationEditionOffer::NONE;
 	/** @var bool */
 	public $hasEduFeaturesEnabled = false;
+	/** @var string */
+	public $eduProductUUID = "";
 	/** @var float */
 	public $rainLevel;
 	/** @var float */
@@ -97,12 +100,10 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 	/** @var bool */
 	public $isTexturePacksRequired = true;
 	/**
-	 * @var mixed[][]
-	 * @phpstan-var array<string, array{0: int, 1: bool|int|float}>
+	 * @var GameRule[]
+	 * @phpstan-var array<string, GameRule>
 	 */
-	public $gameRules = [ //TODO: implement this
-		"naturalregeneration" => [GameRuleType::BOOL, false] //Hack for client side regeneration
-	];
+	public $gameRules = [];
 	/** @var bool */
 	public $hasBonusChestEnabled = false;
 	/** @var bool */
@@ -127,9 +128,17 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 	public $isWorldTemplateOptionLocked = false;
 	/** @var bool */
 	public $onlySpawnV1Villagers = false;
-
 	/** @var string */
 	public $vanillaVersion = ProtocolInfo::MINECRAFT_VERSION_NETWORK;
+	/** @var int */
+	public $limitedWorldWidth = 0;
+	/** @var int */
+	public $limitedWorldLength = 0;
+	/** @var bool */
+	public $isNewNether = true;
+	/** @var bool|null */
+	public $experimentalGameplayOverride = null;
+
 	/** @var string */
 	public $levelId = ""; //base64 string, usually the same as world folder name in vanilla
 	/** @var string */
@@ -146,6 +155,8 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 	public $enchantmentSeed = 0;
 	/** @var string */
 	public $multiplayerCorrelationId = ""; //TODO: this should be filled with a UUID of some sort
+	/** @var bool */
+	public $enableNewInventorySystem = false; //TODO
 
 	/**
 	 * @var CacheableNbt
@@ -158,7 +169,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 	 */
 	public $itemTable = [];
 
-	protected function decodePayload(NetworkBinaryStream $in) : void{
+	protected function decodePayload(PacketSerializer $in) : void{
 		$this->entityUniqueId = $in->getEntityUniqueId();
 		$this->entityRuntimeId = $in->getEntityRuntimeId();
 		$this->playerGamemode = $in->getVarInt();
@@ -170,7 +181,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 
 		//Level settings
 		$this->seed = $in->getVarInt();
-		$this->dimension = $in->getVarInt();
+		$this->spawnSettings = SpawnSettings::read($in);
 		$this->generator = $in->getVarInt();
 		$this->worldGamemode = $in->getVarInt();
 		$this->difficulty = $in->getVarInt();
@@ -179,6 +190,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		$this->time = $in->getVarInt();
 		$this->eduEditionOffer = $in->getVarInt();
 		$this->hasEduFeaturesEnabled = $in->getBool();
+		$this->eduProductUUID = $in->getString();
 		$this->rainLevel = $in->getLFloat();
 		$this->lightningLevel = $in->getLFloat();
 		$this->hasConfirmedPlatformLockedContent = $in->getBool();
@@ -200,8 +212,16 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		$this->isFromWorldTemplate = $in->getBool();
 		$this->isWorldTemplateOptionLocked = $in->getBool();
 		$this->onlySpawnV1Villagers = $in->getBool();
-
 		$this->vanillaVersion = $in->getString();
+		$this->limitedWorldWidth = $in->getLInt();
+		$this->limitedWorldLength = $in->getLInt();
+		$this->isNewNether = $in->getBool();
+		if($in->getBool()){
+			$this->experimentalGameplayOverride = $in->getBool();
+		}else{
+			$this->experimentalGameplayOverride = null;
+		}
+
 		$this->levelId = $in->getString();
 		$this->worldName = $in->getString();
 		$this->premiumWorldTemplateId = $in->getString();
@@ -226,9 +246,10 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		}
 
 		$this->multiplayerCorrelationId = $in->getString();
+		$this->enableNewInventorySystem = $in->getBool();
 	}
 
-	protected function encodePayload(NetworkBinaryStream $out) : void{
+	protected function encodePayload(PacketSerializer $out) : void{
 		$out->putEntityUniqueId($this->entityUniqueId);
 		$out->putEntityRuntimeId($this->entityRuntimeId);
 		$out->putVarInt($this->playerGamemode);
@@ -240,7 +261,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 
 		//Level settings
 		$out->putVarInt($this->seed);
-		$out->putVarInt($this->dimension);
+		$this->spawnSettings->write($out);
 		$out->putVarInt($this->generator);
 		$out->putVarInt($this->worldGamemode);
 		$out->putVarInt($this->difficulty);
@@ -249,6 +270,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		$out->putVarInt($this->time);
 		$out->putVarInt($this->eduEditionOffer);
 		$out->putBool($this->hasEduFeaturesEnabled);
+		$out->putString($this->eduProductUUID);
 		$out->putLFloat($this->rainLevel);
 		$out->putLFloat($this->lightningLevel);
 		$out->putBool($this->hasConfirmedPlatformLockedContent);
@@ -270,8 +292,15 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		$out->putBool($this->isFromWorldTemplate);
 		$out->putBool($this->isWorldTemplateOptionLocked);
 		$out->putBool($this->onlySpawnV1Villagers);
-
 		$out->putString($this->vanillaVersion);
+		$out->putLInt($this->limitedWorldWidth);
+		$out->putLInt($this->limitedWorldLength);
+		$out->putBool($this->isNewNether);
+		$out->putBool($this->experimentalGameplayOverride !== null);
+		if($this->experimentalGameplayOverride !== null){
+			$out->putBool($this->experimentalGameplayOverride);
+		}
+
 		$out->putString($this->levelId);
 		$out->putString($this->worldName);
 		$out->putString($this->premiumWorldTemplateId);
@@ -286,6 +315,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		$out->put(self::serializeItemTable($this->itemTable));
 
 		$out->putString($this->multiplayerCorrelationId);
+		$out->putBool($this->enableNewInventorySystem);
 	}
 
 	/**
@@ -293,7 +323,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 	 * @phpstan-param array<string, int> $table
 	 */
 	private static function serializeItemTable(array $table) : string{
-		$stream = new NetworkBinaryStream();
+		$stream = new PacketSerializer();
 		$stream->putUnsignedVarInt(count($table));
 		foreach($table as $name => $legacyId){
 			$stream->putString($name);

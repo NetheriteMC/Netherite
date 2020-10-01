@@ -72,7 +72,6 @@ use function substr;
 use function sys_get_temp_dir;
 use function trim;
 use function xdebug_get_function_stack;
-use const DIRECTORY_SEPARATOR;
 use const PHP_EOL;
 use const PHP_INT_MAX;
 use const PHP_INT_SIZE;
@@ -499,6 +498,21 @@ class Utils{
 	public static function validateCallableSignature(callable $signature, callable $subject) : void{
 		if(!($sigType = CallbackType::createFromCallable($signature))->isSatisfiedBy($subject)){
 			throw new \TypeError("Declaration of callable `" . CallbackType::createFromCallable($subject) . "` must be compatible with `" . $sigType . "`");
+		}
+	}
+
+	/**
+	 * @phpstan-template TMemberType
+	 * @phpstan-param array<mixed, TMemberType> $array
+	 * @phpstan-param \Closure(TMemberType) : void $validator
+	 */
+	public static function validateArrayValueType(array $array, \Closure $validator) : void{
+		foreach($array as $k => $v){
+			try{
+				$validator($v);
+			}catch(\TypeError $e){
+				throw new \TypeError("Incorrect type of element at \"$k\": " . $e->getMessage(), 0, $e);
+			}
 		}
 	}
 

@@ -32,11 +32,10 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\player\PlayerExhaustEvent;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\PlayerInventory;
-use pocketmine\item\Consumable;
 use pocketmine\item\enchantment\Enchantment;
-use pocketmine\item\FoodSource;
 use pocketmine\item\Item;
 use pocketmine\item\Totem;
+use pocketmine\math\Vector3;
 use pocketmine\nbt\NBT;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
@@ -48,6 +47,7 @@ use pocketmine\network\mcpe\protocol\AddPlayerPacket;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
 use pocketmine\network\mcpe\protocol\PlayerSkinPacket;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use pocketmine\network\mcpe\protocol\types\entity\StringMetadataProperty;
 use pocketmine\network\mcpe\protocol\types\PlayerListEntry;
@@ -55,20 +55,15 @@ use pocketmine\player\Player;
 use pocketmine\utils\Limits;
 use pocketmine\uuid\UUID;
 use pocketmine\world\sound\TotemUseSound;
-use pocketmine\world\World;
 use function array_filter;
 use function array_merge;
 use function array_values;
-use function in_array;
 use function min;
 use function random_int;
-use function strlen;
 
 class Human extends Living implements ProjectileSource, InventoryHolder{
 
-	public static function getNetworkTypeId() : int{
-		return -1; //TODO: ideally we shouldn't have to specify this at all here ...
-	}
+	public static function getNetworkTypeId() : string{ return EntityIds::PLAYER; }
 
 	/** @var PlayerInventory */
 	protected $inventory;
@@ -94,33 +89,27 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 	/** @var int */
 	protected $xpSeed;
 
-	protected $baseOffset = 1.62;
-
-	public function __construct(World $world, CompoundTag $nbt){
-		if($this->skin === null){
-			$skinTag = $nbt->getCompoundTag("Skin");
-			if($skinTag === null){
-				throw new \InvalidStateException((new \ReflectionClass($this))->getShortName() . " must have a valid skin set");
-			}
-			$this->skin = new Skin( //this throws if the skin is invalid
-				$skinTag->getString("Name"),
-				$skinTag->hasTag("Data", StringTag::class) ? $skinTag->getString("Data") : $skinTag->getByteArray("Data"), //old data (this used to be saved as a StringTag in older versions of PM)
-				$skinTag->getByteArray("CapeData", ""),
-				$skinTag->getString("GeometryName", ""),
-				$skinTag->getByteArray("GeometryData", "")
-			);
-		}
-
-		parent::__construct($world, $nbt);
+	public function __construct(Location $location, Skin $skin, ?CompoundTag $nbt = null){
+		$this->skin = $skin;
+		parent::__construct($location, $nbt);
 	}
 
 	/**
-	 * @deprecated
-	 *
-	 * Checks the length of a supplied skin bitmap and returns whether the length is valid.
+	 * @throws InvalidSkinException
+	 * @throws \UnexpectedValueException
 	 */
-	public static function isValidSkin(string $skin) : bool{
-		return in_array(strlen($skin), Skin::ACCEPTED_SKIN_SIZES, true);
+	public static function parseSkinNBT(CompoundTag $nbt) : Skin{
+		$skinTag = $nbt->getCompoundTag("Skin");
+		if($skinTag === null){
+			throw new \UnexpectedValueException("Missing skin data");
+		}
+		return new Skin( //this throws if the skin is invalid
+			$skinTag->getString("Name"),
+			($skinDataTag = $skinTag->getTag("Data")) instanceof StringTag ? $skinDataTag->getValue() : $skinTag->getByteArray("Data"), //old data (this used to be saved as a StringTag in older versions of PM)
+			$skinTag->getByteArray("CapeData", ""),
+			$skinTag->getString("GeometryName", ""),
+			$skinTag->getByteArray("GeometryData", "")
+		);
 	}
 
 	public function getUniqueId() : UUID{
@@ -149,10 +138,9 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 	 * @param Player[]|null $targets
 	 */
 	public function sendSkin(?array $targets = null) : void{
-		$pk = new PlayerSkinPacket();
-		$pk->uuid = $this->getUniqueId();
-		$pk->skin = SkinAdapterSingleton::get()->toSkinData($this->skin);
-		$this->server->broadcastPackets($targets ?? $this->hasSpawned, [$pk]);
+		$this->server->broadcastPackets($targets ?? $this->hasSpawned, [
+			PlayerSkinPacket::create($this->getUniqueId(), SkinAdapterSingleton::get()->toSkinData($this->skin))
+		]);
 	}
 
 	public function jump() : void{
@@ -206,8 +194,8 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 	 * For Human entities which are not players, sets their properties such as nametag, skin and UUID from NBT.
 	 */
 	protected function initHumanData(CompoundTag $nbt) : void{
-		if($nbt->hasTag("NameTag", StringTag::class)){
-			$this->setNameTag($nbt->getString("NameTag"));
+		if(($nameTagTag = $nbt->getTag("NameTag")) instanceof StringTag){
+			$this->setNameTag($nameTagTag->getValue());
 		}
 
 		$this->uuid = UUID::fromData((string) $this->getId(), $this->skin->getSkinData(), $this->getNameTag());
@@ -263,8 +251,8 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 			$nbt->getFloat("XpP", 0.0));
 		$this->xpManager->setLifetimeTotalXp($nbt->getInt("XpTotal", 0));
 
-		if($nbt->hasTag("XpSeed", IntTag::class)){
-			$this->xpSeed = $nbt->getInt("XpSeed");
+		if(($xpSeedTag = $nbt->getTag("XpSeed")) instanceof IntTag){
+			$this->xpSeed = $xpSeedTag->getValue();
 		}else{
 			$this->xpSeed = random_int(Limits::INT32_MIN, Limits::INT32_MAX);
 		}
@@ -420,6 +408,10 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 		if(!($this instanceof Player)){
 			$player->getNetworkSession()->sendDataPacket(PlayerListPacket::remove([PlayerListEntry::createRemovalEntry($this->uuid)]));
 		}
+	}
+
+	public function getOffsetPosition(Vector3 $vector3) : Vector3{
+		return $vector3->add(0, 1.621, 0); //TODO: +0.001 hack for MCPE falling underground
 	}
 
 	public function broadcastMovement(bool $teleport = false) : void{

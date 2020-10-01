@@ -25,6 +25,7 @@ namespace pocketmine\block;
 
 use pocketmine\block\tile\Furnace as TileFurnace;
 use pocketmine\block\utils\BlockDataSerializer;
+use pocketmine\block\utils\HorizontalFacingTrait;
 use pocketmine\item\Item;
 use pocketmine\item\ToolTier;
 use pocketmine\math\Facing;
@@ -33,11 +34,11 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
 class Furnace extends Opaque{
+	use HorizontalFacingTrait;
+
 	/** @var BlockIdentifierFlattened */
 	protected $idInfo;
 
-	/** @var int */
-	protected $facing = Facing::NORTH;
 	/** @var bool */
 	protected $lit = false; //this is set based on the blockID
 
@@ -88,7 +89,7 @@ class Furnace extends Opaque{
 
 	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
 		if($player instanceof Player){
-			$furnace = $this->pos->getWorldNonNull()->getTile($this->pos);
+			$furnace = $this->pos->getWorld()->getTile($this->pos);
 			if($furnace instanceof TileFurnace and $furnace->canOpenWith($item->getCustomName())){
 				$player->setCurrentWindow($furnace->getInventory());
 			}
@@ -98,9 +99,9 @@ class Furnace extends Opaque{
 	}
 
 	public function onScheduledUpdate() : void{
-		$furnace = $this->pos->getWorldNonNull()->getTile($this->pos);
+		$furnace = $this->pos->getWorld()->getTile($this->pos);
 		if($furnace instanceof TileFurnace and $furnace->onUpdate()){
-			$this->pos->getWorldNonNull()->scheduleDelayedBlockUpdate($this->pos, 1); //TODO: check this
+			$this->pos->getWorld()->scheduleDelayedBlockUpdate($this->pos, 1); //TODO: check this
 		}
 	}
 }

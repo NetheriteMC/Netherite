@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\protocol\types\resourcepacks;
 
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 
 class ResourcePackInfoEntry{
 
@@ -80,25 +80,24 @@ class ResourcePackInfoEntry{
 		return $this->hasScripts;
 	}
 
-	public function write(NetworkBinaryStream $out) : void{
+	public function write(PacketSerializer $out) : void{
 		$out->putString($this->packId);
 		$out->putString($this->version);
 		$out->putLLong($this->sizeBytes);
-		$out->putString($this->encryptionKey ?? "");
-		$out->putString($this->subPackName ?? "");
-		$out->putString($this->contentId ?? "");
+		$out->putString($this->encryptionKey);
+		$out->putString($this->subPackName);
+		$out->putString($this->contentId);
 		$out->putBool($this->hasScripts);
 	}
 
-	public static function read(NetworkBinaryStream $in) : self{
-		return new self(
-			$uuid = $in->getString(),
-			$version = $in->getString(),
-			$sizeBytes = $in->getLLong(),
-			$encryptionKey = $in->getString(),
-			$subPackName = $in->getString(),
-			$contentId = $in->getString(),
-			$hasScripts = $in->getBool()
-		);
+	public static function read(PacketSerializer $in) : self{
+		$uuid = $in->getString();
+		$version = $in->getString();
+		$sizeBytes = $in->getLLong();
+		$encryptionKey = $in->getString();
+		$subPackName = $in->getString();
+		$contentId = $in->getString();
+		$hasScripts = $in->getBool();
+		return new self($uuid, $version, $sizeBytes, $encryptionKey, $subPackName, $contentId, $hasScripts);
 	}
 }

@@ -60,7 +60,7 @@ class Torch extends Flowable{
 		$face = Facing::opposite($this->facing);
 
 		if($this->getSide($face)->isTransparent() and !($face === Facing::DOWN and ($below->getId() === BlockLegacyIds::FENCE or $below->getId() === BlockLegacyIds::COBBLESTONE_WALL))){
-			$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+			$this->pos->getWorld()->useBreakOn($this->pos);
 		}
 	}
 
@@ -72,14 +72,13 @@ class Torch extends Flowable{
 			$this->facing = $face;
 			return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
 		}else{
-			static $faces = [
+			foreach([
 				Facing::SOUTH,
 				Facing::WEST,
 				Facing::NORTH,
 				Facing::EAST,
 				Facing::DOWN
-			];
-			foreach($faces as $side){
+			] as $side){
 				$block = $this->getSide($side);
 				if(!$block->isTransparent()){
 					$this->facing = Facing::opposite($side);

@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\item;
 
-use pocketmine\entity\EntityFactory;
+use pocketmine\entity\Location;
 use pocketmine\entity\projectile\Arrow as ArrowEntity;
 use pocketmine\entity\projectile\Projectile;
 use pocketmine\event\entity\EntityShootBowEvent;
@@ -34,7 +34,7 @@ use pocketmine\world\sound\BowShootSound;
 use function intdiv;
 use function min;
 
-class Bow extends Tool{
+class Bow extends Tool implements Releasable{
 
 	public function getFuelTime() : int{
 		return 200;
@@ -51,19 +51,18 @@ class Bow extends Tool{
 		}
 
 		$location = $player->getLocation();
-		$nbt = EntityFactory::createBaseNBT(
-			$player->getEyePos(),
-			$player->getDirectionVector(),
-			($location->yaw > 180 ? 360 : 0) - $location->yaw,
-			-$location->pitch
-		);
 
 		$diff = $player->getItemUseDuration();
 		$p = $diff / 20;
 		$baseForce = min((($p ** 2) + $p * 2) / 3, 1);
 
-		/** @var ArrowEntity $entity */
-		$entity = EntityFactory::getInstance()->create(ArrowEntity::class, $location->getWorldNonNull(), $nbt, $player, $baseForce >= 1);
+		$entity = new ArrowEntity(Location::fromObject(
+			$player->getEyePos(),
+			$player->getWorld(),
+			($location->yaw > 180 ? 360 : 0) - $location->yaw,
+			-$location->pitch
+		), $player, $baseForce >= 1);
+		$entity->setMotion($player->getDirectionVector());
 
 		$infinity = $this->hasEnchantment(Enchantment::INFINITY());
 		if($infinity){
@@ -80,8 +79,8 @@ class Bow extends Tool{
 		}
 		$ev = new EntityShootBowEvent($player, $this, $entity, $baseForce * 3);
 
-		if($baseForce < 0.1 or $diff < 5){
-			$ev->setCancelled();
+		if($baseForce < 0.1 or $diff < 5 or $player->isSpectator()){
+			$ev->cancel();
 		}
 
 		$ev->call();
@@ -104,7 +103,7 @@ class Bow extends Tool{
 			}
 
 			$ev->getProjectile()->spawnToAll();
-			$location->getWorldNonNull()->addSound($location, new BowShootSound());
+			$location->getWorld()->addSound($location, new BowShootSound());
 		}else{
 			$entity->spawnToAll();
 		}

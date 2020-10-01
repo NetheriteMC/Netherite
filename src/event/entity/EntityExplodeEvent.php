@@ -27,10 +27,12 @@ use pocketmine\block\Block;
 use pocketmine\entity\Entity;
 use pocketmine\event\Cancellable;
 use pocketmine\event\CancellableTrait;
+use pocketmine\utils\Utils;
 use pocketmine\world\Position;
 
 /**
  * Called when a entity explodes
+ * @phpstan-extends EntityEvent<Entity>
  */
 class EntityExplodeEvent extends EntityEvent implements Cancellable{
 	use CancellableTrait;
@@ -69,6 +71,7 @@ class EntityExplodeEvent extends EntityEvent implements Cancellable{
 	 * @param Block[] $blocks
 	 */
 	public function setBlockList(array $blocks) : void{
+		Utils::validateArrayValueType($blocks, function(Block $_) : void{});
 		$this->blocks = $blocks;
 	}
 

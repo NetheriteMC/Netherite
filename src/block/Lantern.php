@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\block;
 
 use pocketmine\item\Item;
+use pocketmine\math\Axis;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
@@ -59,8 +60,8 @@ class Lantern extends Transparent{
 			AxisAlignedBB::one()
 				->trim(Facing::UP,   $this->hanging ? 6 / 16 : 8 / 16)
 				->trim(Facing::DOWN, $this->hanging ? 2 / 16 : 0)
-				->squash(Facing::AXIS_X, 5 / 16)
-				->squash(Facing::AXIS_Z, 5 / 16)
+				->squash(Axis::X, 5 / 16)
+				->squash(Axis::Z, 5 / 16)
 		];
 	}
 
@@ -69,17 +70,17 @@ class Lantern extends Transparent{
 	}
 
 	public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
-		if(!$this->canAttachTo($this->pos->getWorldNonNull()->getBlock($blockReplace->getPos()->up())) and !$this->canAttachTo($this->pos->getWorldNonNull()->getBlock($blockReplace->getPos()->down()))){
+		if(!$this->canAttachTo($this->pos->getWorld()->getBlock($blockReplace->getPos()->up())) and !$this->canAttachTo($this->pos->getWorld()->getBlock($blockReplace->getPos()->down()))){
 			return false;
 		}
 
-		$this->hanging = ($face === Facing::DOWN or !$this->canAttachTo($this->pos->getWorldNonNull()->getBlock($blockReplace->getPos()->down())));
+		$this->hanging = ($face === Facing::DOWN or !$this->canAttachTo($this->pos->getWorld()->getBlock($blockReplace->getPos()->down())));
 		return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
 	}
 
 	public function onNearbyBlockChange() : void{
-		if(!$this->canAttachTo($this->pos->getWorldNonNull()->getBlock($this->hanging ? $this->pos->up() : $this->pos->down()))){
-			$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+		if(!$this->canAttachTo($this->pos->getWorld()->getBlock($this->hanging ? $this->pos->up() : $this->pos->down()))){
+			$this->pos->getWorld()->useBreakOn($this->pos);
 		}
 	}
 }

@@ -23,8 +23,8 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\protocol\types\inventory;
 
-use pocketmine\item\ItemIds;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\network\mcpe\protocol\types\FixedItemIds;
 
 final class ItemStack{
 
@@ -48,7 +48,7 @@ final class ItemStack{
 	 * @param string[] $canDestroy
 	 */
 	public function __construct(int $id, int $meta, int $count, ?CompoundTag $nbt, array $canPlaceOn, array $canDestroy, ?int $shieldBlockingTick = null){
-		if(($shieldBlockingTick !== null) !== ($id === ItemIds::SHIELD)){
+		if(($shieldBlockingTick !== null) !== ($id === FixedItemIds::SHIELD)){
 			throw new \InvalidArgumentException("Blocking tick must only be provided for shield items");
 		}
 		$this->id = $id;
@@ -96,5 +96,18 @@ final class ItemStack{
 
 	public function getShieldBlockingTick() : ?int{
 		return $this->shieldBlockingTick;
+	}
+
+	public function equals(ItemStack $itemStack) : bool{
+		return
+			$this->id === $itemStack->id &&
+			$this->meta === $itemStack->meta &&
+			$this->count === $itemStack->count &&
+			$this->canPlaceOn === $itemStack->canPlaceOn &&
+			$this->canDestroy === $itemStack->canDestroy &&
+			$this->shieldBlockingTick === $itemStack->shieldBlockingTick && (
+				$this->nbt === $itemStack->nbt || //this covers null === null and fast object identity
+				($this->nbt !== null && $itemStack->nbt !== null && $this->nbt->equals($itemStack->nbt))
+			);
 	}
 }

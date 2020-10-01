@@ -25,24 +25,24 @@ namespace pocketmine\entity\object;
 
 use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Entity;
+use pocketmine\entity\Location;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\item\VanillaItems;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
-use pocketmine\nbt\tag\ByteTag;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\AddPaintingPacket;
-use pocketmine\network\mcpe\protocol\types\entity\EntityLegacyIds;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
 use pocketmine\world\particle\DestroyBlockParticle;
 use pocketmine\world\World;
 use function ceil;
 
 class Painting extends Entity{
-	public static function getNetworkTypeId() : int{ return EntityLegacyIds::PAINTING; }
+	public static function getNetworkTypeId() : string{ return EntityIds::PAINTING; }
 
-	private const DATA_TO_FACING = [
+	public const DATA_TO_FACING = [
 		0 => Facing::SOUTH,
 		1 => Facing::WEST,
 		2 => Facing::NORTH,
@@ -70,18 +70,14 @@ class Painting extends Entity{
 	protected $blockIn;
 	/** @var int */
 	protected $facing = Facing::NORTH;
-	/** @var string */
+	/** @var PaintingMotive */
 	protected $motive;
 
-	public function __construct(World $world, CompoundTag $nbt){
-		$this->motive = $nbt->getString("Motive");
-		$this->blockIn = new Vector3($nbt->getInt("TileX"), $nbt->getInt("TileY"), $nbt->getInt("TileZ"));
-		if($nbt->hasTag("Direction", ByteTag::class)){
-			$this->facing = self::DATA_TO_FACING[$nbt->getByte("Direction")] ?? Facing::NORTH;
-		}elseif($nbt->hasTag("Facing", ByteTag::class)){
-			$this->facing = self::DATA_TO_FACING[$nbt->getByte("Facing")] ?? Facing::NORTH;
-		}
-		parent::__construct($world, $nbt);
+	public function __construct(Location $location, Vector3 $blockIn, int $facing, PaintingMotive $motive, ?CompoundTag $nbt = null){
+		$this->motive = $motive;
+		$this->blockIn = $blockIn->asVector3();
+		$this->facing = $facing;
+		parent::__construct($location, $nbt);
 	}
 
 	protected function initEntity(CompoundTag $nbt) : void{
@@ -99,7 +95,7 @@ class Painting extends Entity{
 		$nbt->setByte("Facing", self::FACING_TO_DATA[$this->facing]);
 		$nbt->setByte("Direction", self::FACING_TO_DATA[$this->facing]); //Save both for full compatibility
 
-		$nbt->setString("Motive", $this->motive);
+		$nbt->setString("Motive", $this->motive->getName());
 
 		return $nbt;
 	}
@@ -157,7 +153,7 @@ class Painting extends Entity{
 			($this->boundingBox->minZ + $this->boundingBox->maxZ) / 2
 		);
 		$pk->direction = self::FACING_TO_DATA[$this->facing];
-		$pk->title = $this->motive;
+		$pk->title = $this->motive->getName();
 
 		$player->getNetworkSession()->sendDataPacket($pk);
 	}
@@ -166,7 +162,7 @@ class Painting extends Entity{
 	 * Returns the painting motive (which image is displayed on the painting)
 	 */
 	public function getMotive() : PaintingMotive{
-		return PaintingMotive::getMotiveByName($this->motive);
+		return $this->motive;
 	}
 
 	public function getFacing() : int{

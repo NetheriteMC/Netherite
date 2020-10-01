@@ -137,13 +137,17 @@ class InventoryTransaction{
 	 * @throws TransactionValidationException
 	 */
 	protected function matchItems(array &$needItems, array &$haveItems) : void{
+		$needItems = [];
+		$haveItems = [];
 		foreach($this->actions as $key => $action){
 			if(!$action->getTargetItem()->isNull()){
 				$needItems[] = $action->getTargetItem();
 			}
 
-			if(!$action->isValid($this->source)){
-				throw new TransactionValidationException("Action " . get_class($action) . " is not valid in the current transaction");
+			try{
+				$action->validate($this->source);
+			}catch(TransactionValidationException $e){
+				throw new TransactionValidationException(get_class($action) . ": " . $e->getMessage(), 0, $e);
 			}
 
 			if(!$action->getSourceItem()->isNull()){
@@ -269,12 +273,6 @@ class InventoryTransaction{
 		}
 	}
 
-	protected function sendInventories() : void{
-		foreach($this->inventories as $inventory){
-			$this->source->getNetworkSession()->getInvManager()->syncContents($inventory);
-		}
-	}
-
 	protected function callExecuteEvent() : bool{
 		$ev = new InventoryTransactionEvent($this);
 		$ev->call();
@@ -284,12 +282,11 @@ class InventoryTransaction{
 	/**
 	 * Executes the group of actions, returning whether the transaction executed successfully or not.
 	 *
-	 * @throws TransactionValidationException
+	 * @throws TransactionException
 	 */
-	public function execute() : bool{
+	public function execute() : void{
 		if($this->hasExecuted()){
-			$this->sendInventories();
-			return false;
+			throw new TransactionValidationException("Transaction has already been executed");
 		}
 
 		$this->shuffleActions();
@@ -297,14 +294,12 @@ class InventoryTransaction{
 		$this->validate();
 
 		if(!$this->callExecuteEvent()){
-			$this->sendInventories();
-			return false;
+			throw new TransactionCancelledException("Transaction event cancelled");
 		}
 
 		foreach($this->actions as $action){
 			if(!$action->onPreExecute($this->source)){
-				$this->sendInventories();
-				return false;
+				throw new TransactionCancelledException("One of the actions in this transaction was cancelled");
 			}
 		}
 
@@ -313,8 +308,6 @@ class InventoryTransaction{
 		}
 
 		$this->hasExecuted = true;
-
-		return true;
 	}
 
 	public function hasExecuted() : bool{

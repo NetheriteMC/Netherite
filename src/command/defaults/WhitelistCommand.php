@@ -31,7 +31,9 @@ use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function count;
 use function implode;
+use function sort;
 use function strtolower;
+use const SORT_STRING;
 
 class WhitelistCommand extends VanillaCommand{
 
@@ -49,10 +51,6 @@ class WhitelistCommand extends VanillaCommand{
 			return true;
 		}
 
-		if(count($args) === 0 or count($args) > 2){
-			throw new InvalidCommandSyntaxException();
-		}
-
 		if(count($args) === 1){
 			if($this->badPerm($sender, strtolower($args[0]))){
 				return false;
@@ -64,18 +62,19 @@ class WhitelistCommand extends VanillaCommand{
 
 					return true;
 				case "on":
-					$sender->getServer()->setConfigBool("white-list", true);
+					$sender->getServer()->getConfigGroup()->setConfigBool("white-list", true);
 					Command::broadcastCommandMessage($sender, new TranslationContainer("commands.whitelist.enabled"));
 
 					return true;
 				case "off":
-					$sender->getServer()->setConfigBool("white-list", false);
+					$sender->getServer()->getConfigGroup()->setConfigBool("white-list", false);
 					Command::broadcastCommandMessage($sender, new TranslationContainer("commands.whitelist.disabled"));
 
 					return true;
 				case "list":
 					$entries = $sender->getServer()->getWhitelisted()->getAll(true);
-					$result = implode($entries, ", ");
+					sort($entries, SORT_STRING);
+					$result = implode(", ", $entries);
 					$count = count($entries);
 
 					$sender->sendMessage(new TranslationContainer("commands.whitelist.list", [$count, $count]));
@@ -112,7 +111,7 @@ class WhitelistCommand extends VanillaCommand{
 			}
 		}
 
-		return true;
+		throw new InvalidCommandSyntaxException();
 	}
 
 	private function badPerm(CommandSender $sender, string $subcommand) : bool{
@@ -121,7 +120,7 @@ class WhitelistCommand extends VanillaCommand{
 			"off" => "disable"
 		];
 		if(!$sender->hasPermission("pocketmine.command.whitelist." . ($map[$subcommand] ?? $subcommand))){
-			$sender->sendMessage($sender->getServer()->getLanguage()->translateString(TextFormat::RED . "%commands.generic.permission"));
+			$sender->sendMessage($sender->getLanguage()->translateString(TextFormat::RED . "%commands.generic.permission"));
 
 			return true;
 		}

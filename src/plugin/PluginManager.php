@@ -37,13 +37,10 @@ use pocketmine\timings\TimingsHandler;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Utils;
 use function array_intersect;
-use function array_map;
 use function array_merge;
-use function array_pad;
 use function class_exists;
 use function count;
 use function dirname;
-use function explode;
 use function file_exists;
 use function get_class;
 use function implode;
@@ -59,7 +56,6 @@ use function shuffle;
 use function stripos;
 use function strpos;
 use function strtolower;
-use function strtoupper;
 use const DIRECTORY_SEPARATOR;
 
 /**
@@ -163,6 +159,11 @@ class PluginManager{
 					if(!is_a($mainClass, Plugin::class, true)){
 						$this->server->getLogger()->error("Main class for plugin " . $description->getName() . " is not an instance of " . Plugin::class);
 						return null;
+					}
+
+					$permManager = PermissionManager::getInstance();
+					foreach($description->getPermissions() as $perm){
+						$permManager->addPermission($perm);
 					}
 
 					/**
@@ -360,47 +361,6 @@ class PluginManager{
 		return $loadedPlugins;
 	}
 
-	/**
-	 * Returns whether a specified API version string is considered compatible with the server's API version.
-	 *
-	 * @param string ...$versions
-	 */
-	public function isCompatibleApi(string ...$versions) : bool{
-		$serverString = $this->server->getApiVersion();
-		$serverApi = array_pad(explode("-", $serverString, 2), 2, "");
-		$serverNumbers = array_map("\intval", explode(".", $serverApi[0]));
-
-		foreach($versions as $version){
-			//Format: majorVersion.minorVersion.patch (3.0.0)
-			//    or: majorVersion.minorVersion.patch-devBuild (3.0.0-alpha1)
-			if($version !== $serverString){
-				$pluginApi = array_pad(explode("-", $version, 2), 2, ""); //0 = version, 1 = suffix (optional)
-
-				if(strtoupper($pluginApi[1]) !== strtoupper($serverApi[1])){ //Different release phase (alpha vs. beta) or phase build (alpha.1 vs alpha.2)
-					continue;
-				}
-
-				$pluginNumbers = array_map("\intval", array_pad(explode(".", $pluginApi[0]), 3, "0")); //plugins might specify API like "3.0" or "3"
-
-				if($pluginNumbers[0] !== $serverNumbers[0]){ //Completely different API version
-					continue;
-				}
-
-				if($pluginNumbers[1] > $serverNumbers[1]){ //If the plugin requires new API features, being backwards compatible
-					continue;
-				}
-
-				if($pluginNumbers[1] === $serverNumbers[1] and $pluginNumbers[2] > $serverNumbers[2]){ //If the plugin requires bug fixes in patches, being backwards compatible
-					continue;
-				}
-			}
-
-			return true;
-		}
-
-		return false;
-	}
-
 	public function isPluginEnabled(Plugin $plugin) : bool{
 		return isset($this->plugins[$plugin->getDescription()->getName()]) and $plugin->isEnabled();
 	}
@@ -409,10 +369,6 @@ class PluginManager{
 		if(!$plugin->isEnabled()){
 			$this->server->getLogger()->info($this->server->getLanguage()->translateString("pocketmine.plugin.enable", [$plugin->getDescription()->getFullName()]));
 
-			$permManager = PermissionManager::getInstance();
-			foreach($plugin->getDescription()->getPermissions() as $perm){
-				$permManager->addPermission($perm);
-			}
 			$plugin->getScheduler()->setEnabled(true);
 			$plugin->onEnableStateChange(true);
 
@@ -438,10 +394,6 @@ class PluginManager{
 			$plugin->onEnableStateChange(false);
 			$plugin->getScheduler()->shutdown();
 			HandlerListManager::global()->unregisterAll($plugin);
-			$permManager = PermissionManager::getInstance();
-			foreach($plugin->getDescription()->getPermissions() as $perm){
-				$permManager->removePermission($perm);
-			}
 		}
 	}
 

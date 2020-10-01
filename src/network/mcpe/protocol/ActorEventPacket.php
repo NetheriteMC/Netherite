@@ -25,7 +25,7 @@ namespace pocketmine\network\mcpe\protocol;
 
 #include <rules/DataPacket.h>
 
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 
 class ActorEventPacket extends DataPacket implements ClientboundPacket, ServerboundPacket{
 	public const NETWORK_ID = ProtocolInfo::ACTOR_EVENT_PACKET;
@@ -87,6 +87,7 @@ class ActorEventPacket extends DataPacket implements ClientboundPacket, Serverbo
 	public const TREASURE_HUNT = 72;
 	public const AGENT_SUMMON = 73;
 	public const CHARGED_CROSSBOW = 74;
+	public const FALL = 75;
 
 	//TODO: add more events
 
@@ -105,13 +106,13 @@ class ActorEventPacket extends DataPacket implements ClientboundPacket, Serverbo
 		return $result;
 	}
 
-	protected function decodePayload(NetworkBinaryStream $in) : void{
+	protected function decodePayload(PacketSerializer $in) : void{
 		$this->entityRuntimeId = $in->getEntityRuntimeId();
 		$this->event = $in->getByte();
 		$this->data = $in->getVarInt();
 	}
 
-	protected function encodePayload(NetworkBinaryStream $out) : void{
+	protected function encodePayload(PacketSerializer $out) : void{
 		$out->putEntityRuntimeId($this->entityRuntimeId);
 		$out->putByte($this->event);
 		$out->putVarInt($this->data);

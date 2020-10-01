@@ -63,13 +63,13 @@ class Leaves extends Transparent{
 		return 0b1100;
 	}
 
-	public function diffusesSkyLight() : bool{
+	public function blocksDirectSkyLight() : bool{
 		return true;
 	}
 
 	/**
 	 * @param true[] $visited reference parameter
-	 * @phpstan-param array<string, true> $visited
+	 * @phpstan-param array<int, true> $visited
 	 */
 	protected function findLog(Vector3 $pos, array &$visited = [], int $distance = 0) : bool{
 		$index = World::blockHash($pos->x, $pos->y, $pos->z);
@@ -78,7 +78,7 @@ class Leaves extends Transparent{
 		}
 		$visited[$index] = true;
 
-		$block = $this->pos->getWorldNonNull()->getBlock($pos);
+		$block = $this->pos->getWorld()->getBlock($pos);
 		if($block instanceof Wood){ //type doesn't matter
 			return true;
 		}
@@ -97,7 +97,7 @@ class Leaves extends Transparent{
 	public function onNearbyBlockChange() : void{
 		if(!$this->noDecay and !$this->checkDecay){
 			$this->checkDecay = true;
-			$this->pos->getWorldNonNull()->setBlock($this->pos, $this, false);
+			$this->pos->getWorld()->setBlock($this->pos, $this, false);
 		}
 	}
 
@@ -111,9 +111,9 @@ class Leaves extends Transparent{
 			$ev->call();
 			if($ev->isCancelled() or $this->findLog($this->pos)){
 				$this->checkDecay = false;
-				$this->pos->getWorldNonNull()->setBlock($this->pos, $this, false);
+				$this->pos->getWorld()->setBlock($this->pos, $this, false);
 			}else{
-				$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+				$this->pos->getWorld()->useBreakOn($this->pos);
 			}
 		}
 	}

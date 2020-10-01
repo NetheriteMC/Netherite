@@ -29,7 +29,7 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\network\mcpe\protocol\types\entity\EntityLegacyIds;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use function atan2;
 use function mt_rand;
 use function sqrt;
@@ -37,7 +37,7 @@ use const M_PI;
 
 class Squid extends WaterAnimal{
 
-	public static function getNetworkTypeId() : int{ return EntityLegacyIds::SQUID; }
+	public static function getNetworkTypeId() : string{ return EntityIds::SQUID; }
 
 	public $width = 0.95;
 	public $height = 0.95;
@@ -97,7 +97,7 @@ class Squid extends WaterAnimal{
 		if($this->isAlive()){
 
 			if($this->location->y > 62 and $this->swimDirection !== null){
-				$this->swimDirection->y = -0.5;
+				$this->swimDirection = $this->swimDirection->withComponents(null, -0.5, null);
 			}
 
 			$inWater = $this->isUnderwater();

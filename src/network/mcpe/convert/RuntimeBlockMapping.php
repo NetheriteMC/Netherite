@@ -29,6 +29,7 @@ use pocketmine\nbt\NBT;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\CacheableNbt;
 use pocketmine\utils\SingletonTrait;
 use function file_get_contents;
@@ -70,9 +71,18 @@ final class RuntimeBlockMapping{
 
 	private function setupLegacyMappings() : void{
 		$legacyIdMap = LegacyBlockIdToStringIdMap::getInstance();
-		$legacyStateMap = (new NetworkNbtSerializer())->read(file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/r12_to_current_block_map.nbt"))->getTag();
-		if(!($legacyStateMap instanceof ListTag) or $legacyStateMap->getTagType() !== NBT::TAG_Compound){
-			throw new \RuntimeException("Invalid legacy states mapping table, expected TAG_List<TAG_Compound> root");
+		/** @var R12ToCurrentBlockMapEntry[] $legacyStateMap */
+		$legacyStateMap = [];
+		$legacyStateMapReader = new PacketSerializer(file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/r12_to_current_block_map.bin"));
+		$nbtReader = new NetworkNbtSerializer();
+		while(!$legacyStateMapReader->feof()){
+			$id = $legacyStateMapReader->getString();
+			$meta = $legacyStateMapReader->getLShort();
+
+			$offset = $legacyStateMapReader->getOffset();
+			$state = $nbtReader->read($legacyStateMapReader->getBuffer(), $offset)->mustGetCompoundTag();
+			$legacyStateMapReader->setOffset($offset);
+			$legacyStateMap[] = new R12ToCurrentBlockMapEntry($id, $meta, $state);
 		}
 
 		/**
@@ -82,19 +92,17 @@ final class RuntimeBlockMapping{
 		foreach($this->bedrockKnownStates as $k => $state){
 			$idToStatesMap[$state->getCompoundTag("block")->getString("name")][] = $k;
 		}
-		/** @var CompoundTag $pair */
 		foreach($legacyStateMap as $pair){
-			$oldState = $pair->getCompoundTag("old");
-			$id = $legacyIdMap->stringToLegacy($oldState->getString("name"));
+			$id = $legacyIdMap->stringToLegacy($pair->getId()) ?? null;
 			if($id === null){
-				throw new \RuntimeException("State does not have a legacy ID");
+				throw new \RuntimeException("No legacy ID matches " . $pair->getId());
 			}
-			$data = $oldState->getShort("val");
+			$data = $pair->getMeta();
 			if($data > 15){
 				//we can't handle metadata with more than 4 bits
 				continue;
 			}
-			$mappedState = $pair->getCompoundTag("new");
+			$mappedState = $pair->getBlockState();
 			$mappedName = $mappedState->getString("name");
 			if(!isset($idToStatesMap[$mappedName])){
 				throw new \RuntimeException("Mapped new state does not appear in network table");
@@ -127,21 +135,12 @@ final class RuntimeBlockMapping{
 		return $table;
 	}
 
-	public function toRuntimeId(int $id, int $meta = 0) : int{
-		/*
-		 * try id+meta first
-		 * if not found, try id+0 (strip meta)
-		 * if still not found, return update! block
-		 */
-		return $this->legacyToRuntimeMap[($id << 4) | $meta] ?? $this->legacyToRuntimeMap[$id << 4] ?? $this->legacyToRuntimeMap[BlockLegacyIds::INFO_UPDATE << 4];
+	public function toRuntimeId(int $internalStateId) : int{
+		return $this->legacyToRuntimeMap[$internalStateId] ?? $this->legacyToRuntimeMap[BlockLegacyIds::INFO_UPDATE << 4];
 	}
 
-	/**
-	 * @return int[] [id, meta]
-	 */
-	public function fromRuntimeId(int $runtimeId) : array{
-		$v = $this->runtimeToLegacyMap[$runtimeId];
-		return [$v >> 4, $v & 0xf];
+	public function fromRuntimeId(int $runtimeId) : int{
+		return $this->runtimeToLegacyMap[$runtimeId];
 	}
 
 	private function registerMapping(int $staticRuntimeId, int $legacyId, int $legacyMeta) : void{
@@ -160,7 +159,7 @@ final class RuntimeBlockMapping{
 	/**
 	 * @phpstan-return CacheableNbt<\pocketmine\nbt\tag\ListTag>
 	 */
-	public function getStartGamePaletteCache() : ?CacheableNbt{
-		return $this->startGamePaletteCache ?? new CacheableNbt(new ListTag($this->bedrockKnownStates));
+	public function getStartGamePaletteCache() : CacheableNbt{
+		return $this->startGamePaletteCache ?? ($this->startGamePaletteCache = new CacheableNbt(new ListTag($this->bedrockKnownStates)));
 	}
 }

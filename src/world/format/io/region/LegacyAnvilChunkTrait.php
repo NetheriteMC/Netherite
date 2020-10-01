@@ -34,6 +34,7 @@ use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\ChunkUtils;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
 use pocketmine\world\format\SubChunk;
+use function zlib_decode;
 
 /**
  * Trait containing I/O methods for handling legacy Anvil-style chunks.
@@ -54,17 +55,20 @@ trait LegacyAnvilChunkTrait{
 	 * @throws CorruptedChunkException
 	 */
 	protected function deserializeChunk(string $data) : Chunk{
+		$decompressed = @zlib_decode($data);
+		if($decompressed === false){
+			throw new CorruptedChunkException("Failed to decompress chunk NBT");
+		}
 		$nbt = new BigEndianNbtSerializer();
 		try{
-			$chunk = $nbt->readCompressed($data)->mustGetCompoundTag();
+			$chunk = $nbt->read($decompressed)->mustGetCompoundTag();
 		}catch(NbtDataException $e){
 			throw new CorruptedChunkException($e->getMessage(), 0, $e);
 		}
-		if(!$chunk->hasTag("Level")){
+		$chunk = $chunk->getTag("Level");
+		if(!($chunk instanceof CompoundTag)){
 			throw new CorruptedChunkException("'Level' key is missing from chunk NBT");
 		}
-
-		$chunk = $chunk->getCompoundTag("Level");
 
 		$subChunks = [];
 		$subChunksTag = $chunk->getListTag("Sections") ?? [];
@@ -82,18 +86,18 @@ trait LegacyAnvilChunkTrait{
 			}
 		};
 		$biomeArray = null;
-		if($chunk->hasTag("BiomeColors", IntArrayTag::class)){
-			$biomeArray = $makeBiomeArray(ChunkUtils::convertBiomeColors($chunk->getIntArray("BiomeColors"))); //Convert back to original format
-		}elseif($chunk->hasTag("Biomes", ByteArrayTag::class)){
-			$biomeArray = $makeBiomeArray($chunk->getByteArray("Biomes"));
+		if(($biomeColorsTag = $chunk->getTag("BiomeColors")) instanceof IntArrayTag){
+			$biomeArray = $makeBiomeArray(ChunkUtils::convertBiomeColors($biomeColorsTag->getValue())); //Convert back to original format
+		}elseif(($biomesTag = $chunk->getTag("Biomes")) instanceof ByteArrayTag){
+			$biomeArray = $makeBiomeArray($biomesTag->getValue());
 		}
 
 		$result = new Chunk(
 			$chunk->getInt("xPos"),
 			$chunk->getInt("zPos"),
 			$subChunks,
-			$chunk->hasTag("Entities", ListTag::class) ? self::getCompoundList("Entities", $chunk->getListTag("Entities")) : [],
-			$chunk->hasTag("TileEntities", ListTag::class) ? self::getCompoundList("TileEntities", $chunk->getListTag("TileEntities")) : [],
+			($entitiesTag = $chunk->getTag("Entities")) instanceof ListTag ? self::getCompoundList("Entities", $entitiesTag) : [],
+			($tilesTag = $chunk->getTag("TileEntities")) instanceof ListTag ? self::getCompoundList("TileEntities", $tilesTag) : [],
 			$biomeArray
 		);
 		$result->setPopulated($chunk->getByte("TerrainPopulated", 0) !== 0);

@@ -24,11 +24,10 @@ declare(strict_types=1);
 namespace pocketmine\world\sound;
 
 use pocketmine\block\Block;
-use pocketmine\data\bedrock\LegacyEntityIdToStringIdMap;
 use pocketmine\entity\Entity;
 use pocketmine\math\Vector3;
+use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
 use pocketmine\network\mcpe\protocol\LevelSoundEventPacket;
-use pocketmine\player\Player;
 
 /**
  * Played when an entity hits the ground after falling a distance that doesn't cause damage, e.g. due to jumping.
@@ -49,8 +48,8 @@ class EntityLandSound implements Sound{
 		return LevelSoundEventPacket::create(
 			LevelSoundEventPacket::SOUND_LAND,
 			$pos,
-			$this->blockLandedOn->getRuntimeId(),
-			$this->entity instanceof Player ? "minecraft:player" : LegacyEntityIdToStringIdMap::getInstance()->legacyToString($this->entity::getNetworkTypeId()) //TODO: bad hack, stuff depends on players having a -1 network ID :(
+			RuntimeBlockMapping::getInstance()->toRuntimeId($this->blockLandedOn->getFullId()),
+			$this->entity::getNetworkTypeId()
 			//TODO: does isBaby have any relevance here?
 		);
 	}

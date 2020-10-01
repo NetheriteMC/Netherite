@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\block;
 
 use pocketmine\block\utils\BlockDataSerializer;
+use pocketmine\block\utils\HorizontalFacingTrait;
 use pocketmine\item\Item;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
@@ -32,13 +33,13 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
 class RedstoneRepeater extends Flowable{
+	use HorizontalFacingTrait;
+
 	/** @var BlockIdentifierFlattened */
 	protected $idInfo;
 
 	/** @var bool */
 	protected $powered = false;
-	/** @var int */
-	protected $facing = Facing::NORTH;
 	/** @var int */
 	protected $delay = 1;
 
@@ -99,13 +100,13 @@ class RedstoneRepeater extends Flowable{
 		if(++$this->delay > 4){
 			$this->delay = 1;
 		}
-		$this->pos->getWorldNonNull()->setBlock($this->pos, $this);
+		$this->pos->getWorld()->setBlock($this->pos, $this);
 		return true;
 	}
 
 	public function onNearbyBlockChange() : void{
 		if($this->getSide(Facing::DOWN)->isTransparent()){
-			$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+			$this->pos->getWorld()->useBreakOn($this->pos);
 		}
 	}
 

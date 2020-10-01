@@ -28,7 +28,7 @@ use pocketmine\entity\Human;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\nbt\tag\ShortTag;
-use pocketmine\network\mcpe\protocol\types\entity\EntityLegacyIds;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use pocketmine\player\Player;
@@ -36,7 +36,7 @@ use function sqrt;
 
 class ExperienceOrb extends Entity{
 
-	public static function getNetworkTypeId() : int{ return EntityLegacyIds::XP_ORB; }
+	public static function getNetworkTypeId() : string{ return EntityIds::XP_ORB; }
 
 	public const TAG_VALUE_PC = "Value"; //short
 	public const TAG_VALUE_PE = "experience value"; //int (WTF?)
@@ -108,10 +108,10 @@ class ExperienceOrb extends Entity{
 		$this->age = $nbt->getShort("Age", 0);
 
 		$value = 1;
-		if($nbt->hasTag(self::TAG_VALUE_PC, ShortTag::class)){ //PC
-			$value = $nbt->getShort(self::TAG_VALUE_PC);
-		}elseif($nbt->hasTag(self::TAG_VALUE_PE, IntTag::class)){ //PE save format
-			$value = $nbt->getInt(self::TAG_VALUE_PE);
+		if(($valuePcTag = $nbt->getTag(self::TAG_VALUE_PC)) instanceof ShortTag){ //PC
+			$value = $valuePcTag->getValue();
+		}elseif(($valuePeTag = $nbt->getTag(self::TAG_VALUE_PE)) instanceof IntTag){ //PE save format
+			$value = $valuePeTag->getValue();
 		}
 
 		$this->setXpValue($value);
@@ -195,11 +195,7 @@ class ExperienceOrb extends Entity{
 
 			$distance = $vector->lengthSquared();
 			if($distance < 1){
-				$diff = $vector->normalize()->multiply(0.2 * (1 - sqrt($distance)) ** 2);
-
-				$this->motion->x += $diff->x;
-				$this->motion->y += $diff->y;
-				$this->motion->z += $diff->z;
+				$this->motion = $this->motion->addVector($vector->normalize()->multiply(0.2 * (1 - sqrt($distance)) ** 2));
 			}
 
 			if($currentTarget->getXpManager()->canPickupXp() and $this->boundingBox->intersectsWith($currentTarget->getBoundingBox())){

@@ -24,9 +24,10 @@ declare(strict_types=1);
 namespace pocketmine\item;
 
 use pocketmine\block\Block;
-use pocketmine\entity\EntityFactory;
+use pocketmine\entity\Location;
 use pocketmine\entity\object\Painting;
 use pocketmine\entity\object\PaintingMotive;
+use pocketmine\math\Axis;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -37,7 +38,7 @@ use function count;
 class PaintingItem extends Item{
 
 	public function onActivate(Player $player, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector) : ItemUseResult{
-		if(Facing::axis($face) === Facing::AXIS_Y){
+		if(Facing::axis($face) === Axis::Y){
 			return ItemUseResult::NONE();
 		}
 
@@ -72,29 +73,10 @@ class PaintingItem extends Item{
 		/** @var PaintingMotive $motive */
 		$motive = $motives[array_rand($motives)];
 
-		static $directions = [
-			Facing::SOUTH => 0,
-			Facing::WEST => 1,
-			Facing::NORTH => 2,
-			Facing::EAST => 3
-		];
-
-		$direction = $directions[$face] ?? -1;
-		if($direction === -1){
-			return ItemUseResult::NONE();
-		}
-
 		$replacePos = $blockReplace->getPos();
 		$clickedPos = $blockClicked->getPos();
-		$nbt = EntityFactory::createBaseNBT($replacePos, null, $direction * 90, 0);
-		$nbt->setByte("Direction", $direction);
-		$nbt->setString("Motive", $motive->getName());
-		$nbt->setInt("TileX", $clickedPos->getFloorX());
-		$nbt->setInt("TileY", $clickedPos->getFloorY());
-		$nbt->setInt("TileZ", $clickedPos->getFloorZ());
 
-		/** @var Painting $entity */
-		$entity = EntityFactory::getInstance()->create(Painting::class, $replacePos->getWorldNonNull(), $nbt);
+		$entity = new Painting(Location::fromObject($replacePos, $replacePos->getWorld()), $clickedPos, $face, $motive);
 		$this->pop();
 		$entity->spawnToAll();
 

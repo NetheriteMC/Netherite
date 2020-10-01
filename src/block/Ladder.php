@@ -24,8 +24,11 @@ declare(strict_types=1);
 namespace pocketmine\block;
 
 use pocketmine\block\utils\BlockDataSerializer;
+use pocketmine\block\utils\HorizontalFacingTrait;
 use pocketmine\entity\Entity;
+use pocketmine\entity\Living;
 use pocketmine\item\Item;
+use pocketmine\math\Axis;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
@@ -33,9 +36,7 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
 class Ladder extends Transparent{
-
-	/** @var int */
-	protected $facing = Facing::NORTH;
+	use HorizontalFacingTrait;
 
 	public function __construct(BlockIdentifier $idInfo, string $name, ?BlockBreakInfo $breakInfo = null){
 		parent::__construct($idInfo, $name, $breakInfo ?? new BlockBreakInfo(0.4, BlockToolType::AXE));
@@ -65,11 +66,12 @@ class Ladder extends Transparent{
 		return true;
 	}
 
-	public function onEntityInside(Entity $entity) : void{
-		if($entity->getPosition()->floor()->distanceSquared($this->pos) < 1){ //entity coordinates must be inside block
+	public function onEntityInside(Entity $entity) : bool{
+		if($entity instanceof Living && $entity->getPosition()->floor()->distanceSquared($this->pos) < 1){ //entity coordinates must be inside block
 			$entity->resetFallDistance();
 			$entity->onGround = true;
 		}
+		return true;
 	}
 
 	/**
@@ -80,7 +82,7 @@ class Ladder extends Transparent{
 	}
 
 	public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
-		if(!$blockClicked->isTransparent() and Facing::axis($face) !== Facing::AXIS_Y){
+		if(!$blockClicked->isTransparent() and Facing::axis($face) !== Axis::Y){
 			$this->facing = $face;
 			return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
 		}
@@ -90,7 +92,7 @@ class Ladder extends Transparent{
 
 	public function onNearbyBlockChange() : void{
 		if(!$this->getSide(Facing::opposite($this->facing))->isSolid()){ //Replace with common break method
-			$this->pos->getWorldNonNull()->useBreakOn($this->pos);
+			$this->pos->getWorld()->useBreakOn($this->pos);
 		}
 	}
 }

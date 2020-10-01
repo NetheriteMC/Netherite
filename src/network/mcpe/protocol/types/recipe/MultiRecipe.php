@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\protocol\types\recipe;
 
-use pocketmine\network\mcpe\protocol\serializer\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\uuid\UUID;
 
 final class MultiRecipe extends RecipeWithTypeId{
@@ -43,21 +43,31 @@ final class MultiRecipe extends RecipeWithTypeId{
 
 	/** @var UUID */
 	private $recipeId;
+	/** @var int */
+	private $recipeNetId;
 
-	public function __construct(int $typeId, UUID $recipeId){
+	public function __construct(int $typeId, UUID $recipeId, int $recipeNetId){
 		parent::__construct($typeId);
 		$this->recipeId = $recipeId;
+		$this->recipeNetId = $recipeNetId;
 	}
 
 	public function getRecipeId() : UUID{
 		return $this->recipeId;
 	}
 
-	public static function decode(int $typeId, NetworkBinaryStream $in) : self{
-		return new self($typeId, $in->getUUID());
+	public function getRecipeNetId() : int{
+		return $this->recipeNetId;
 	}
 
-	public function encode(NetworkBinaryStream $out) : void{
+	public static function decode(int $typeId, PacketSerializer $in) : self{
+		$uuid = $in->getUUID();
+		$recipeNetId = $in->readGenericTypeNetworkId();
+		return new self($typeId, $uuid, $recipeNetId);
+	}
+
+	public function encode(PacketSerializer $out) : void{
 		$out->putUUID($this->recipeId);
+		$out->writeGenericTypeNetworkId($this->recipeNetId);
 	}
 }

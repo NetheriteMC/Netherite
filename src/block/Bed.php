@@ -26,6 +26,8 @@ namespace pocketmine\block;
 use pocketmine\block\tile\Bed as TileBed;
 use pocketmine\block\utils\BlockDataSerializer;
 use pocketmine\block\utils\DyeColor;
+use pocketmine\block\utils\HorizontalFacingTrait;
+use pocketmine\data\bedrock\DyeColorIdMap;
 use pocketmine\item\Bed as ItemBed;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
@@ -39,9 +41,8 @@ use pocketmine\world\BlockTransaction;
 use pocketmine\world\World;
 
 class Bed extends Transparent{
+	use HorizontalFacingTrait;
 
-	/** @var int */
-	protected $facing = Facing::NORTH;
 	/** @var bool */
 	protected $occupied = false;
 	/** @var bool */
@@ -73,7 +74,7 @@ class Bed extends Transparent{
 	public function readStateFromWorld() : void{
 		parent::readStateFromWorld();
 		//read extra state information from the tile - this is an ugly hack
-		$tile = $this->pos->getWorldNonNull()->getTile($this->pos);
+		$tile = $this->pos->getWorld()->getTile($this->pos);
 		if($tile instanceof TileBed){
 			$this->color = $tile->getColor();
 		}
@@ -82,7 +83,7 @@ class Bed extends Transparent{
 	public function writeStateToWorld() : void{
 		parent::writeStateToWorld();
 		//extra block properties storage hack
-		$tile = $this->pos->getWorldNonNull()->getTile($this->pos);
+		$tile = $this->pos->getWorld()->getTile($this->pos);
 		if($tile instanceof TileBed){
 			$tile->setColor($this->color);
 		}
@@ -103,14 +104,10 @@ class Bed extends Transparent{
 		return $this->occupied;
 	}
 
-	public function setOccupied(bool $occupied = true) : void{
+	/** @return $this */
+	public function setOccupied(bool $occupied = true) : self{
 		$this->occupied = $occupied;
-		$this->pos->getWorldNonNull()->setBlock($this->pos, $this, false);
-
-		if(($other = $this->getOtherHalf()) !== null){
-			$other->occupied = $occupied;
-			$this->pos->getWorldNonNull()->setBlock($other->pos, $other, false);
-		}
+		return $this;
 	}
 
 	private function getOtherHalfSide() : int{
@@ -139,7 +136,7 @@ class Bed extends Transparent{
 				return true;
 			}
 
-			$time = $this->pos->getWorldNonNull()->getTimeOfDay();
+			$time = $this->pos->getWorld()->getTimeOfDay();
 
 			$isNight = ($time >= World::TIME_NIGHT and $time < World::TIME_SUNRISE);
 
@@ -162,6 +159,13 @@ class Bed extends Transparent{
 
 		return true;
 
+	}
+
+	public function onNearbyBlockChange() : void{
+		if(($other = $this->getOtherHalf()) !== null and $other->occupied !== $this->occupied){
+			$this->occupied = $other->occupied;
+			$this->pos->getWorld()->setBlock($this->pos, $this);
+		}
 	}
 
 	public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
@@ -193,7 +197,7 @@ class Bed extends Transparent{
 	}
 
 	public function asItem() : Item{
-		return ItemFactory::getInstance()->get($this->idInfo->getItemId(), $this->color->getMagicNumber());
+		return ItemFactory::getInstance()->get($this->idInfo->getItemId(), DyeColorIdMap::getInstance()->toId($this->color));
 	}
 
 	public function getAffectedBlocks() : array{

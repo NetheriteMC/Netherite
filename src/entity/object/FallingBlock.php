@@ -27,25 +27,25 @@ use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\utils\Fallable;
 use pocketmine\entity\Entity;
+use pocketmine\entity\Location;
 use pocketmine\event\entity\EntityBlockChangeEvent;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\ByteTag;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
-use pocketmine\network\mcpe\protocol\types\entity\EntityLegacyIds;
+use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use function abs;
-use function get_class;
 
 class FallingBlock extends Entity{
 
-	public static function getNetworkTypeId() : int{ return EntityLegacyIds::FALLING_BLOCK; }
+	public static function getNetworkTypeId() : string{ return EntityIds::FALLING_BLOCK; }
 
 	public $width = 0.98;
 	public $height = 0.98;
-
-	protected $baseOffset = 0.49;
 
 	protected $gravity = 0.04;
 	protected $drag = 0.02;
@@ -55,25 +55,28 @@ class FallingBlock extends Entity{
 
 	public $canCollide = false;
 
-	protected function initEntity(CompoundTag $nbt) : void{
-		parent::initEntity($nbt);
+	public function __construct(Location $location, Block $block, ?CompoundTag $nbt = null){
+		$this->block = $block;
+		parent::__construct($location, $nbt);
+	}
 
+	public static function parseBlockNBT(BlockFactory $factory, CompoundTag $nbt) : Block{
 		$blockId = 0;
 
 		//TODO: 1.8+ save format
-		if($nbt->hasTag("TileID", IntTag::class)){
-			$blockId = $nbt->getInt("TileID");
-		}elseif($nbt->hasTag("Tile", ByteTag::class)){
-			$blockId = $nbt->getByte("Tile");
+		if(($tileIdTag = $nbt->getTag("TileID")) instanceof IntTag){
+			$blockId = $tileIdTag->getValue();
+		}elseif(($tileTag = $nbt->getTag("Tile")) instanceof ByteTag){
+			$blockId = $tileTag->getValue();
 		}
 
 		if($blockId === 0){
-			throw new \UnexpectedValueException("Invalid " . get_class($this) . " entity: block ID is 0 or missing");
+			throw new \UnexpectedValueException("Missing block info from NBT");
 		}
 
 		$damage = $nbt->getByte("Data", 0);
 
-		$this->block = BlockFactory::getInstance()->get($blockId, $damage);
+		return $factory->get($blockId, $damage);
 	}
 
 	public function canCollideWith(Entity $entity) : bool{
@@ -112,7 +115,7 @@ class FallingBlock extends Entity{
 				$this->flagForDespawn();
 
 				$block = $world->getBlock($pos);
-				if(($block->isTransparent() and !$block->canBeReplaced()) or !$world->isInWorld($pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ()) or ($this->onGround and abs($this->location->y - $this->location->getFloorY()) > 0.001)){
+				if(!$block->canBeReplaced() or !$world->isInWorld($pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ()) or ($this->onGround and abs($this->location->y - $this->location->getFloorY()) > 0.001)){
 					//FIXME: anvils are supposed to destroy torches
 					$world->dropItem($this->location, $this->block->asItem());
 				}else{
@@ -144,6 +147,10 @@ class FallingBlock extends Entity{
 	protected function syncNetworkData(EntityMetadataCollection $properties) : void{
 		parent::syncNetworkData($properties);
 
-		$properties->setInt(EntityMetadataProperties::VARIANT, $this->block->getRuntimeId());
+		$properties->setInt(EntityMetadataProperties::VARIANT, RuntimeBlockMapping::getInstance()->toRuntimeId($this->block->getFullId()));
+	}
+
+	public function getOffsetPosition(Vector3 $vector3) : Vector3{
+		return $vector3->add(0, 0.49, 0); //TODO: check if height affects this
 	}
 }
