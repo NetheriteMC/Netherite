@@ -64,7 +64,8 @@ class Nether extends Generator{
 
 		$ores = new Ore();
 		$ores->setOreTypes([
-			new OreType(VanillaBlocks::NETHER_QUARTZ_ORE(), VanillaBlocks::NETHERRACK(), 16, 14, 10, 117)
+			new OreType(VanillaBlocks::NETHER_QUARTZ_ORE(), VanillaBlocks::NETHERRACK(), 16, 14, 10, 117),
+			new OreType(VanillaBlocks::ANCIENT_DEBRIS(), VanillaBlocks::NETHERRACK(), 1, 1, 8, 22)
 		]);
 		$this->populators[] = $ores;
 	}
