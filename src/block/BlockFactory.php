@@ -116,6 +116,7 @@ class BlockFactory{
 		$this->register(new Bed(new BID(Ids::BED_BLOCK, 0, ItemIds::BED, TileBed::class), "Bed Block", new BlockBreakInfo(0.2)));
 		$this->register(new Bedrock(new BID(Ids::BEDROCK, 0), "Bedrock", BlockBreakInfo::indestructible()));
 
+		$this->register(new Opaque(new BID(Ids::BASALT, 0), "Basalt", new BlockBreakInfo(1.25, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel(), 4.2)));
 		$this->register(new Beetroot(new BID(Ids::BEETROOT_BLOCK, 0), "Beetroot Block", BlockBreakInfo::instant()));
 		$this->register(new BlueIce(new BID(Ids::BLUE_ICE, 0), "Blue Ice", new BlockBreakInfo(2.8, BlockToolType::PICKAXE)));
 		$this->register(new BoneBlock(new BID(Ids::BONE_BLOCK, 0), "Bone Block", new BlockBreakInfo(2.0, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel())));
@@ -338,6 +339,7 @@ class BlockFactory{
 		$this->register(new Stair(new BID(Ids::GRANITE_STAIRS, 0), "Granite Stairs", $stoneBreakInfo));
 		$this->register(new Opaque(new BID(Ids::STONE, Meta::STONE_POLISHED_ANDESITE), "Polished Andesite", $stoneBreakInfo));
 		$this->register(new Stair(new BID(Ids::POLISHED_ANDESITE_STAIRS, 0), "Polished Andesite Stairs", $stoneBreakInfo));
+		$this->register(new Opaque(new BID(Ids::POLISHED_BASALT, 0), "Polished Basalt", new BlockBreakInfo(1.25, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel(), 4.2)));
 		$this->register(new Opaque(new BID(Ids::STONE, Meta::STONE_POLISHED_DIORITE), "Polished Diorite", $stoneBreakInfo));
 		$this->register(new Stair(new BID(Ids::POLISHED_DIORITE_STAIRS, 0), "Polished Diorite Stairs", $stoneBreakInfo));
 		$this->register(new Opaque(new BID(Ids::STONE, Meta::STONE_POLISHED_GRANITE), "Polished Granite", $stoneBreakInfo));
