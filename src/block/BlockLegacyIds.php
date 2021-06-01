@@ -498,4 +498,8 @@ final class BlockLegacyIds{
 	public const COMPOSTER = 468;
 	public const LIT_BLAST_FURNACE = 469;
 
+	public const BASALT = 489;
+	public const POLISHED_BASALT = 490;
+	public const ANCIENT_DEBRIS = 526;
+
 }
