@@ -50,6 +50,7 @@ use function assert;
  * @method static Air AIR()
  * @method static Flower ALLIUM()
  * @method static MushroomStem ALL_SIDED_MUSHROOM_STEM()
+ * @method static Opaque ANCIENT_DEBRIS()
  * @method static Opaque ANDESITE()
  * @method static Slab ANDESITE_SLAB()
  * @method static Stair ANDESITE_STAIRS()
@@ -61,6 +62,7 @@ use function assert;
  * @method static FloorBanner BANNER()
  * @method static Barrel BARREL()
  * @method static Transparent BARRIER()
+ * @method static Opaque BASALT()
  * @method static Beacon BEACON()
  * @method static Bed BED()
  * @method static Bedrock BEDROCK()
@@ -425,6 +427,7 @@ use function assert;
  * @method static Opaque POLISHED_ANDESITE()
  * @method static Slab POLISHED_ANDESITE_SLAB()
  * @method static Stair POLISHED_ANDESITE_STAIRS()
+ * @method static Opaque POLISHED_BASALT()
  * @method static Opaque POLISHED_DIORITE()
  * @method static Slab POLISHED_DIORITE_SLAB()
  * @method static Stair POLISHED_DIORITE_STAIRS()
@@ -608,6 +611,7 @@ final class VanillaBlocks{
 		self::register("activator_rail", $factory->get(126, 0));
 		self::register("air", $factory->get(0, 0));
 		self::register("all_sided_mushroom_stem", $factory->get(99, 15));
+		self::register("ancient_debris", $factory->get(526, 0));
 		self::register("allium", $factory->get(38, 2));
 		self::register("andesite", $factory->get(1, 5));
 		self::register("andesite_slab", $factory->get(417, 3));
@@ -620,6 +624,7 @@ final class VanillaBlocks{
 		self::register("banner", $factory->get(176, 0));
 		self::register("barrel", $factory->get(458, 0));
 		self::register("barrier", $factory->get(416, 0));
+		self::register("basalt", $factory->get(489, 0));
 		self::register("beacon", $factory->get(138, 0));
 		self::register("bed", $factory->get(26, 0));
 		self::register("bedrock", $factory->get(7, 0));
@@ -984,6 +989,7 @@ final class VanillaBlocks{
 		self::register("polished_andesite", $factory->get(1, 6));
 		self::register("polished_andesite_slab", $factory->get(417, 2));
 		self::register("polished_andesite_stairs", $factory->get(429, 0));
+		self::register("polished_basalt", $factory->get(490, 0));
 		self::register("polished_diorite", $factory->get(1, 4));
 		self::register("polished_diorite_slab", $factory->get(417, 5));
 		self::register("polished_diorite_stairs", $factory->get(428, 0));
