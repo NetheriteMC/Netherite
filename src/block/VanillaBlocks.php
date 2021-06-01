@@ -50,6 +50,7 @@ use function assert;
  * @method static Air AIR()
  * @method static Flower ALLIUM()
  * @method static MushroomStem ALL_SIDED_MUSHROOM_STEM()
+ * @method static Opaque ANCIENT_DEBRIS()
  * @method static Opaque ANDESITE()
  * @method static Slab ANDESITE_SLAB()
  * @method static Stair ANDESITE_STAIRS()
@@ -608,6 +609,7 @@ final class VanillaBlocks{
 		self::register("activator_rail", $factory->get(126, 0));
 		self::register("air", $factory->get(0, 0));
 		self::register("all_sided_mushroom_stem", $factory->get(99, 15));
+		self::register("ancient_debris", $factory->get(526, 0));
 		self::register("allium", $factory->get(38, 2));
 		self::register("andesite", $factory->get(1, 5));
 		self::register("andesite_slab", $factory->get(417, 3));
