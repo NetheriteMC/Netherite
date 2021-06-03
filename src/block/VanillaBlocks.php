@@ -389,6 +389,7 @@ use function assert;
  * @method static Wall MOSSY_STONE_BRICK_WALL()
  * @method static MushroomStem MUSHROOM_STEM()
  * @method static Mycelium MYCELIUM()
+ * @method static Opaque NETHERITE_BLOCK()
  * @method static Netherrack NETHERRACK()
  * @method static Opaque NETHER_BRICKS()
  * @method static Fence NETHER_BRICK_FENCE()
@@ -952,6 +953,7 @@ final class VanillaBlocks{
 		self::register("mossy_stone_bricks", $factory->get(98, 1));
 		self::register("mushroom_stem", $factory->get(99, 10));
 		self::register("mycelium", $factory->get(110, 0));
+		self::register("netherite_block", $factory->get(525, 0));
 		self::register("nether_brick_fence", $factory->get(113, 0));
 		self::register("nether_brick_slab", $factory->get(44, 7));
 		self::register("nether_brick_stairs", $factory->get(114, 0));
