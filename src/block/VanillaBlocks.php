@@ -82,6 +82,7 @@ use function assert;
  * @method static WoodenTrapdoor BIRCH_TRAPDOOR()
  * @method static WallSign BIRCH_WALL_SIGN()
  * @method static Wood BIRCH_WOOD()
+ * @method static Opaque BLACKSTONE()
  * @method static GlazedTerracotta BLACK_GLAZED_TERRACOTTA()
  * @method static GlazedTerracotta BLUE_GLAZED_TERRACOTTA()
  * @method static BlueIce BLUE_ICE()
@@ -644,6 +645,7 @@ final class VanillaBlocks{
 		self::register("birch_trapdoor", $factory->get(401, 0));
 		self::register("birch_wall_sign", $factory->get(442, 2));
 		self::register("birch_wood", $factory->get(467, 2));
+		self::register("blackstone", $factory->get(528, 0));
 		self::register("black_glazed_terracotta", $factory->get(235, 2));
 		self::register("blue_glazed_terracotta", $factory->get(231, 2));
 		self::register("blue_ice", $factory->get(266, 0));
