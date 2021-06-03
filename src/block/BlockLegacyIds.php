@@ -501,5 +501,6 @@ final class BlockLegacyIds{
 	public const BASALT = 489;
 	public const POLISHED_BASALT = 490;
 	public const ANCIENT_DEBRIS = 526;
+	public const BLACKSTONE = 528;
 
 }
